@@ -1,0 +1,11 @@
+[project]
+name = "danish-politician-votes"
+version = "0.1.0"
+description = "ETL pipeline using dlt to fetch Danish politician voting data and store in DuckDB, ready for dbt transformations"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.32.5",
+    "dlt[duckdb]>=1.21.0",
+    "dbt-duckdb>=1.7.0",
+]
