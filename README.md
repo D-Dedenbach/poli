@@ -34,8 +34,11 @@ print(conn.execute('SELECT COUNT(*) FROM raw.actors').fetchall())
 
 ## Next Steps
 
-1. Add dbt transformations in `dbt_project/`
-2. Build API layer with FastAPI
-3. Deploy to production (database URL changes, code stays same)
+- Draw data model in draw.io 
+- Review wait policy on dlt pipelines, should be larger than currently is 
+- Divide sag, møde and afstemning into pipelines and add to dlt
+- Add dbt transformations in `dbt_project/`
+- Build API layer with FastAPI
+- Deploy to production (database URL changes, code stays same)
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design and roadmap.
