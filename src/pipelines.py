@@ -9,15 +9,15 @@ Each pipeline maps a unique key to:
 Add new pipelines here as you expand the datamodel.
 """
 
-from .sources import ft_dk_aktør_source
+from .sources import ft_dk_actor_source
 
 
 # Pipeline registry: {key: {name, dataset, source}}
 PIPELINES = {
     "aktør": {
-        "name": "ft_dk_pipeline_aktør",
-        "dataset": "raw_aktør",
-        "source": ft_dk_aktør_source,
+        "name": "ft_dk_pipeline_actor",
+        "dataset": "raw_actor",
+        "source": ft_dk_actor_source,
         "description": "Danish parliament actors (Aktør, AktørTyper, AktørAktør, AktørAktørRolle)",
     },
     # Add more pipelines here as you expand:

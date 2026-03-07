@@ -15,7 +15,7 @@ python -m src.ingest_dlt
 python -c "
 import duckdb
 conn = duckdb.connect('data/data.duckdb')
-print(conn.execute('SELECT COUNT(*) FROM raw.actors').fetchall())
+print(conn.execute('SELECT COUNT(*) FROM raw_actor.actors').fetchall())
 "
 ```
 
@@ -23,14 +23,21 @@ print(conn.execute('SELECT COUNT(*) FROM raw.actors').fetchall())
 
 - **src/sources.py** — dlt resource definitions for OData endpoints
 - **src/ingest_dlt.py** — dlt pipeline runner  
-- **data/data.duckdb** — DuckDB database with raw data
+- **data/data.duckdb** — Single DuckDB database with multiple schemas (one per pipeline)
 
 ## Data Available
 
-- `raw.actors` — Politicians, committees, ministries (~18k records)
-- `raw.actor_types` — Actor type definitions
-- `raw.actor_actor` — Relationships between actors
-- `raw.actor_actor_roles` — Role definitions
+All data is in `data/data.duckdb` with schemas per pipeline:
+
+**raw_actor schema** (Aktør pipeline):
+- `raw_actor.actors` — Politicians, committees, ministries (~18k records)
+- `raw_actor.actor_types` — Actor type definitions
+- `raw_actor.actor_actor` — Relationships between actors
+- `raw_actor.actor_actor_roles` — Role definitions
+
+Future schemas will be added as pipelines are implemented:
+- `raw_sag` — Cases and case metadata (when implemented)
+- `raw_afstemning` — Votes and voting records (when implemented)
 
 ## Next Steps
 

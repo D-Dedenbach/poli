@@ -39,12 +39,20 @@ def run_pipeline(pipeline_key: str, resources: list[str] | None = None):
     config = PIPELINES[pipeline_key]
     root_dir = os.path.dirname(os.path.dirname(__file__))
 
-    # Create pipeline - DuckDB destination
+    # Ensure data directory exists
+    data_dir = os.path.join(root_dir, "data")
+    os.makedirs(data_dir, exist_ok=True)
+
+    # Create pipeline - Single database file with schema per pipeline
+    # DuckDB will create the database at the default location or use environment variable
+    db_path = os.path.join(data_dir, "data.duckdb")
+
     pipeline = dlt.pipeline(
         pipeline_name=config["name"],
-        destination="duckdb",
+        destination=dlt.destinations.duckdb(path=db_path),
         dataset_name=config["dataset"],
-        pipelines_dir=root_dir,
+        pipelines_dir=os.path.join(data_dir, config["name"]) # Each pipeline has own state dir
+
     )
 
     # Get source

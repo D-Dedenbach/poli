@@ -39,8 +39,9 @@ env/
 .dlt_state/
 
 # DuckDB
-*.duckdb
-*.duckdb.wal
+data/data.duckdb
+data/data.duckdb.wal
+ft_dk_pipeline*/
 
 # Environment variables
 .env
