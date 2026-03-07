@@ -56,7 +56,8 @@ def ft_dk_actor_source():
         "client": {
             "base_url": "https://oda.ft.dk/api",
             "paginator": {
-                "type": "odata_offset",
+                "type": "offset",
+                "total_path": None, # OData APIs often don't provide total count, so we set this to None
                 "limit": 100,
                 "limit_param": "$top",
                 "offset_param": "$skip"
@@ -70,7 +71,7 @@ def ft_dk_actor_source():
             },
             {
                 "name": "actor_types",
-                "endpoint": "AktørTyper",
+                "endpoint": "Aktørtype",
                 "write_disposition": "replace",
             },
             {
