@@ -94,13 +94,13 @@ def ft_dk_afstemning_source():
         "resources": [
             {
                 "name": "votes",
-                "endpoint": "Afstemning",
+                "endpoint": "Afstemning?$filter=opdateringsdato ge datetime'2023-01-01T00:00:00'",
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
             {
                 "name": "member_votes",
-                "endpoint": "Stemme",
+                "endpoint": "Stemme?$filter=opdateringsdato ge datetime'2023-01-01T00:00:00'",
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
