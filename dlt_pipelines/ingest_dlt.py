@@ -16,7 +16,7 @@ import argparse
 import logging
 import os
 import sys
-import dlt
+import dlt_pipelines
 from .sources import ft_dk_actor_source, ft_dk_afstemning_source
 
 
@@ -90,7 +90,7 @@ def run_pipeline(source_name: str, resources: list[str] | None = None):
     os.environ['DESTINATION__DUCKDB__CREDENTIALS__DATABASE'] = db_path
     
     # Create pipeline with unified 'raw' schema
-    pipeline = dlt.pipeline(
+    pipeline = dlt_pipelines.pipeline(
         pipeline_name=f"ft_dk_{source_name}",
         destination="duckdb",
         dataset_name="raw",

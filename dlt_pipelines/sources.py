@@ -9,11 +9,11 @@ Each source function corresponds to a major entity in the Folketinget datamodel:
 - (future) ft_dk_afstemning_source: Votes and voting records
 """
 
-import dlt
+import dlt_pipelines
 from dlt.sources.rest_api import rest_api_source
 
 
-@dlt.source
+@dlt_pipelines.source
 def ft_dk_actor_source():
     """
     Source for Danish parliament actor data from OData API.
@@ -70,7 +70,7 @@ def ft_dk_actor_source():
     return rest_api_source(config)
 
 
-@dlt.source
+@dlt_pipelines.source
 def ft_dk_afstemning_source():
     """
     Source for Danish parliament voting data from OData API.
@@ -94,7 +94,7 @@ def ft_dk_afstemning_source():
         "resources": [
             {
                 "name": "votes",
-                "endpoint": "Afstemning?$filter=opdateringsdato ge datetime'2023-01-01T00:00:00'",
+                "endpoint": "Afstemning?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
