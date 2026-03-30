@@ -37,11 +37,27 @@ sources:
             description: Actor type name (Danish)
             tests:
               - not_null
-      - name: votes
+      - name: member_votes
         description: Raw voting data from ft.dk OData API
         columns:
           - name: id
             description: Unique vote identifier
             tests:
               - unique
+              - not_null
+          - name: typeid
+            description: Vote type identifier (For/Against/Abstain/Not present)
+            tests:
+              - not_null
+          - name: afstemningsid
+            description: Identifier for the vote session
+            tests:
+              - not_null
+          - name: act_rid
+            description: Actor identifier (foreign key to actors.id)
+            tests:
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
               - not_null
