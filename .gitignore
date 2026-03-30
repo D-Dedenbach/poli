@@ -25,6 +25,7 @@ venv/
 ENV/
 env/
 .venv
+.dbt-env/
 
 # IDE
 .vscode/
@@ -39,9 +40,13 @@ env/
 .dlt_state/
 
 # DuckDB
-data/data.duckdb
-data/data.duckdb.wal
-ft_dk_pipeline*/
+*.duckdb
+
+# dbt
+dbt_packages/
+dbt_internal_packages/
+logs/
+target/
 
 # Environment variables
 .env

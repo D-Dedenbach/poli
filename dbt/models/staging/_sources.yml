@@ -1,0 +1,47 @@
+sources:
+  - name: raw
+    database: data
+    schema: raw
+    tables:
+      - name: actors
+        description: Raw actor data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique actor identifier
+            tests:
+              - unique
+              - not_null
+          - name: navn
+            description: Actor name (Danish)
+            tests:
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+          - name: fornavn
+            description: First name
+          - name: efternavn
+            description: Last name
+      - name: actor_types
+        description: Raw actor type data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique actor type identifier
+            tests:
+              - unique
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: type
+            description: Actor type name (Danish)
+            tests:
+              - not_null
+      - name: votes
+        description: Raw voting data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique vote identifier
+            tests:
+              - unique
+              - not_null

@@ -1,0 +1,8 @@
+poli_transform:
+  outputs:
+    dev:
+      type: duckdb
+      path: ../data/data.duckdb
+      threads: 1
+      schema: raw
+  target: dev

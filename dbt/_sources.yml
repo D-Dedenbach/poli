@@ -1,0 +1,7 @@
+sources:
+  - name: raw
+    database: main
+    schema: main
+    tables:
+      - name: actors
+      - name: votes
