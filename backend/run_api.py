@@ -26,4 +26,7 @@ def get_votes(actor_id: int):
     if not result:
         return {"actor_id": actor_id, "votes": []}
     
-    return {"actor_id": actor_id, "votes": result}
+    columns = [desc[0] for desc in conn.description]
+    votes = [dict(zip(columns, row)) for row in result]
+
+    return {"actor_id": actor_id, "votes": votes}

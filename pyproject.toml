@@ -10,4 +10,5 @@ dependencies = [
     "dbt-duckdb>=1.7.0",
     "fastapi>=0.135.2",
     "uvicorn>=0.42.0",
+    "reflex>=0.8.28.post1",
 ]
