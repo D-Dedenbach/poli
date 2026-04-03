@@ -9,11 +9,11 @@ Each source function corresponds to a major entity in the Folketinget datamodel:
 - (future) ft_dk_afstemning_source: Votes and voting records
 """
 
-import dlt_pipelines
+import dlt
 from dlt.sources.rest_api import rest_api_source
 
 
-@dlt_pipelines.source
+@dlt.source
 def ft_dk_actor_source():
     """
     Source for Danish parliament actor data from OData API.
@@ -41,7 +41,7 @@ def ft_dk_actor_source():
         "resources": [
             {
                 "name": "actors",
-                "endpoint": "Aktør",
+                "endpoint": "Aktør?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -53,7 +53,7 @@ def ft_dk_actor_source():
             },
             {
                 "name": "actor_actor",
-                "endpoint": "AktørAktør",
+                "endpoint": "AktørAktør?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -70,7 +70,7 @@ def ft_dk_actor_source():
     return rest_api_source(config)
 
 
-@dlt_pipelines.source
+@dlt.source
 def ft_dk_afstemning_source():
     """
     Source for Danish parliament voting data from OData API.
@@ -100,7 +100,7 @@ def ft_dk_afstemning_source():
             },
             {
                 "name": "member_votes",
-                "endpoint": "Stemme?$filter=opdateringsdato ge datetime'2023-01-01T00:00:00'",
+                "endpoint": "Stemme?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -116,6 +116,74 @@ def ft_dk_afstemning_source():
                 "write_disposition": "merge",
                 "primary_key": "id",
             }
+        ],
+    }
+    return rest_api_source(config)
+
+@dlt.source
+def ft_dk_sag_source():
+    """
+    Source for Danish parliament case data from OData API.
+
+    Fetches case-related tables:
+    - cases: Core case data
+    - case_status_types: Case status definitions
+    - ... (add more as needed)
+    """
+    config = {
+        "client": {
+            "base_url": "https://oda.ft.dk/api",
+            "paginator": {
+                "type": "offset",
+                "limit": 100,
+                "limit_param": "$top",
+                "offset_param": "$skip",
+                "total_path": None, # OData APIs often don't provide total count, so we set this to None
+            },
+        },
+        "resources": [
+            {
+                "name": "case",
+                "endpoint": "Sag?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_status",
+                "endpoint": "Sagsstatus",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_type",
+                "endpoint": "Sagstype",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_category",
+                "endpoint": "Sagskategori",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_step",
+                "endpoint": "Sagstrin?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_step_type",
+                "endpoint": "Sagstrinstype",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_step_status",
+                "endpoint": "Sagstrinsstatus",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
         ],
     }
     return rest_api_source(config)

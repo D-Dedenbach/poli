@@ -13,40 +13,10 @@ Usage:
 """
 
 import argparse
-import logging
 import os
 import sys
-import dlt_pipelines
-from .sources import ft_dk_actor_source, ft_dk_afstemning_source
-
-
-# Configure logging for API requests
-def setup_logging(verbose: bool = False):
-    """
-    Set up logging to see API requests and responses.
-    
-    Args:
-        verbose: If True, show DEBUG level logs (includes full request/response details)
-    """
-    log_level = logging.DEBUG if verbose else logging.INFO
-    
-    # Create logger for requests library (used by dlt)
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    
-    # Enable logging for dlt
-    logging.getLogger("dlt").setLevel(log_level)
-    
-    # Enable logging for urllib3 (HTTP requests)
-    logging.getLogger("urllib3").setLevel(logging.DEBUG if verbose else logging.WARNING)
-    
-    # Enable logging for requests library
-    logging.getLogger("requests").setLevel(logging.DEBUG if verbose else logging.WARNING)
-    
-    # Enable logging for dlt's REST API source
-    logging.getLogger("dlt.sources.rest_api").setLevel(log_level)
+import dlt
+from .sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source
 
 
 # Map source names to their functions
@@ -59,6 +29,10 @@ SOURCES = {
         "function": ft_dk_afstemning_source,
         "description": "Danish parliament votes (Afstemning, Stemme, Stemmetype, Afstemningstype)",
     },
+    "cases": {
+        "function": ft_dk_sag_source,  # Placeholder for future case source
+        "description": "Danish parliament cases (Sag, Sagsstatus, Sagstype, )"
+    }
 }
 
 
@@ -90,10 +64,11 @@ def run_pipeline(source_name: str, resources: list[str] | None = None):
     os.environ['DESTINATION__DUCKDB__CREDENTIALS__DATABASE'] = db_path
     
     # Create pipeline with unified 'raw' schema
-    pipeline = dlt_pipelines.pipeline(
+    pipeline = dlt.pipeline(
         pipeline_name=f"ft_dk_{source_name}",
         destination="duckdb",
         dataset_name="raw",
+        progress=dlt.progress.log(10)
     )
     
     # Get the source
@@ -108,9 +83,9 @@ def run_pipeline(source_name: str, resources: list[str] | None = None):
     print(f"   Description: {source_config['description']}")
     print(f"   Dataset: raw")
     resource_list = resources if resources else "all"
-    print(f"   Resources: {resource_list}")
+    print(f"   Resources: {resource_list}\n")
     
-    # Run the pipeline
+    # Run the pipeline with live progress updates
     load_info = pipeline.run(source)
     
     return load_info
@@ -145,16 +120,10 @@ Examples:
         action="store_true",
         help="List all available sources",
     )
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose logging (shows HTTP requests/responses)",
-    )
+
 
     args = parser.parse_args()
     
-    # Set up logging
-    setup_logging(verbose=args.verbose)
 
     # Handle --list flag
     if args.list or args.source == "list":
