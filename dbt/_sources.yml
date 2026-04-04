@@ -1,7 +1,8 @@
 sources:
   - name: raw
     database: main
-    schema: main
+    schema: raw
     tables:
       - name: actors
       - name: votes
+      - name: case_step

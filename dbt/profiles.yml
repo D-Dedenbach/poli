@@ -4,5 +4,5 @@ poli_transform:
       type: duckdb
       path: ../data/data.duckdb
       threads: 1
-      schema: raw
+      schema: dev
   target: dev

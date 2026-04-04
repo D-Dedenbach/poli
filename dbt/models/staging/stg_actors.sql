@@ -12,4 +12,5 @@ SELECT
     startdato as start_date,
     slutdato as end_date,
     biografi as biography
+    
 FROM {{ source('raw', 'actors') }}

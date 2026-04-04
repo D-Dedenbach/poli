@@ -1,6 +1,5 @@
 {{config(
     materialized='table',
-    schema='app',
     tags=['app'],
     description='This table contains the votes cast by actors in the Danish parliament. It is derived from the raw member_votes data and includes relevant transformations for analysis.'
 )}}

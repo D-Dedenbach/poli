@@ -61,3 +61,175 @@ sources:
             description: Last update timestamp
             tests:
               - not_null
+      - name: case_step
+        description: Raw case step data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case step identifier
+            tests:
+              - unique
+              - not_null
+          - name: folketingstidende_id
+            description: Release version of the folketing hansard
+          - name: folketingstidendesidenummer
+            description: Page number in the folketing hansard
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: sagid
+            description: Case identifier (foreign key to Sag.id)
+            tests:
+              - not_null
+          - name: statusid
+            description: Case step status identifier (foreign key to Sagstrinsstatus.id)
+            tests:
+              - not_null
+          - name: titel
+            description: Title of the case step
+            tests:
+              - not_null
+          - name: typeid
+            description: Case step type identifier (foreign key to Sagstrintype.id)
+            tests:
+              - not_null
+      - name: case
+        description: Raw case data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case identifier
+            tests:
+              - unique
+              - not_null
+          - name: typeid
+            description: Case type identifier (foreign key to Sagstype.id)
+            tests:
+              - not_null
+          - name: statusid
+            description: Case status identifier (foreign key to Sagsstatus.id)
+            tests:
+              - not_null
+          - name: titel
+            description: Title of the case
+            tests:
+              - not_null
+          - name: titelkort
+            description: Short title of the case
+          - name: offentlighedskode
+            description: Public access code for the case
+          - name: nummer
+            description: Case numberx
+          - name: nummerprefix
+            description: Case number prefix
+          - name: nummernumerisk
+            description: Numeric case number
+          - name: nummerpostfix
+            description: Case number postfix
+          - name: resume
+            description: Summary of the case
+          - name: periodeid
+            description: Period identifier
+            tests:
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: statsbudgetsag
+          - name: afg_relsesesultatkode
+          - name: paragrafnummer
+          - name: paragraf
+          - name: afg_relsesdato
+          - name: afg_relse
+          - name: kategoriid
+            description: Case category identifier (foreign key to Sagskategori.id)
+            tests:
+              - not_null
+          - name: afstemningskonklusion
+          - name: fremsatundersagid
+          - name: lovnummer
+          - name: lovnummerdato
+          - name: deltundersagid
+          - name: begrundelse
+          - name: r_dsm_dedato
+            description: "'Rådsmødedato': Date of the council meeting related to the case"
+      - name: case_category
+        description: Raw case category data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case category identifier
+            tests:
+              - unique
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: kategori
+            description: Case category name (Danish)
+            tests:
+              - not_null
+      - name: case_status
+        description: Raw case status data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case status identifier
+            tests:
+              - unique
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: status
+            description: Case status name (Danish)
+            tests:
+              - not_null
+      - name: case_step_status
+        description: Raw case step status data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case step status identifier
+            tests:
+              - unique
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: status
+            description: Case step status name (Danish)
+            tests:
+              - not_null
+      - name: case_type
+        description: Raw case type data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case type identifier
+            tests:
+              - unique
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: type
+            description: Case type name (Danish)
+            tests:
+              - not_null
+      - name: case_step_type
+        description: Raw case step type data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case step type identifier
+            tests:
+              - unique
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: type
+            description: Case step type name (Danish)
+            tests:
+              - not_null
