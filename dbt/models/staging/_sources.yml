@@ -49,11 +49,11 @@ sources:
             description: Vote type identifier (For/Against/Abstain/Not present)
             tests:
               - not_null
-          - name: afstemningsid
+          - name: afstemningid
             description: Identifier for the vote session
             tests:
               - not_null
-          - name: act_rid
+          - name: akt_rid
             description: Actor identifier (foreign key to actors.id)
             tests:
               - not_null

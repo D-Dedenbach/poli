@@ -3,5 +3,5 @@
 SELECT
     id,
     opdateringsdato as updated_at,
-    type
+    type as actor_type
 FROM {{ source('raw', 'actor_types') }}

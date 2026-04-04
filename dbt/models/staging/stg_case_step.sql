@@ -9,7 +9,7 @@ SELECT
     sagid as case_id,
     statusid as status_id,
     titel as title,
-    typeid as case_type_id
+    typeid as case_step_type_id
 
 
 FROM {{source('raw', 'case_step')}}

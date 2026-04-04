@@ -2,7 +2,7 @@ poli_transform:
   outputs:
     dev:
       type: duckdb
-      path: ../data/data.duckdb
+      path: /home/david/git-repos/danish-politician-votes/data/data.duckdb
       threads: 1
       schema: dev
   target: dev
