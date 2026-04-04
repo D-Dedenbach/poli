@@ -233,3 +233,51 @@ sources:
             description: Case step type name (Danish)
             tests:
               - not_null
+      - name: votes
+        description: Raw data about polls (afstemninger) from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique poll identifier
+            tests:
+              - unique
+              - not_null
+          - name: nummer
+            description: Poll number
+            tests:
+              - not_null
+          - name: konklusion
+            description: Poll conclusion (e.g., "Vedtaget", "Forkastet")
+            tests: 
+              - not_null
+          - name: m_deid
+            description: meeting identifier - foreign key; as of current commit meeting tables are not loaded
+          - name: typeid
+            description: Poll type identifier (foreign key to Afstemningstype.id)
+            tests:
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: sagstrinid
+            description: Case step identifier (foreign key to case_step.id)
+            tests:
+              - not_null
+          - name: kommentar
+            description: Comment or notes about the poll
+      - name: vote_types
+        description: Raw poll type (afstemningstype) data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique vote type identifier
+            tests:
+              - unique
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: type
+            description: Vote type name (Danish) (e.g., "For", "Imod", "Hverken eller", "Fraværende")
+            tests:
+              - not_null
