@@ -1,0 +1,12 @@
+# config/categories.yaml
+version: 1
+categories:
+  - name: "Miljø"
+    description: "Klima, natur, forurening, og energipolitik."
+    slug: "miljoe"
+  - name: "Sundhed"
+    description: "Sygehuse, offentlig sundhed, og medicinsk forskning."
+    slug: "sundhed"
+  - name: "Uddannelse"
+    description: "Skoler, universiteter, og uddannelsespolitik."
+    slug: "uddannelse"

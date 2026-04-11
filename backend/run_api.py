@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 import duckdb
-import os 
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from utils.categorization_utils import load_categories
+from transform_scripts.classifier import classify_text
 
 app = FastAPI()
 
@@ -9,6 +15,13 @@ conn = duckdb.connect(database=db_path, read_only=True)
 
 @app.get("/votes/{actor_id}")
 def get_votes(actor_id: int):
+    """
+    Endpoint to retrieve all votes for a given actor_id as defined on oda.ft.dk. 
+    Returns a JSON object containing the actor_id and a list of votes.
+    Each vote includes: vote_id, poll_id, actor_id, actor_name, actor_type_id, and updated_at.
+
+    Currently no pagination is required, the results are ordered by updated at in inverse chronological order.
+    """
     query = f"""
     SELECT 
         vote_id
@@ -30,3 +43,6 @@ def get_votes(actor_id: int):
     votes = [dict(zip(columns, row)) for row in result]
 
     return {"actor_id": actor_id, "votes": votes}
+
+
+
