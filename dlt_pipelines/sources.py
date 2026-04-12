@@ -128,7 +128,7 @@ def ft_dk_sag_source():
     Fetches case-related tables:
     - cases: Core case data
     - case_status_types: Case status definitions
-    - ... (add more as needed)
+    - ... etc
     """
     config = {
         "client": {
@@ -188,3 +188,43 @@ def ft_dk_sag_source():
     }
     return rest_api_source(config)
 
+def ft_dk_mode_source():
+    """
+    Source for meetings - either in plenum or in a committee
+    Includes meeting type and status dimension tables
+    """
+    config = {
+        "client": {
+            "base_url": "https://oda.ft.dk/api",
+            "paginator": {
+                "type": "offset",
+                "limit": 100,
+                "limit_param": "$top",
+                "offset_param": "$skip",
+                "total_path": None, # OData APIs often don't provide total count, so we set this to None
+            },
+        },
+        "resources": [
+            {
+                "name": "meeting",
+                "endpoint": "Møde?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "meeting_status",
+                "endpoint": "Mødestatus",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "meeting_type",
+                "endpoint": "Mødetype",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+
+        ],
+    }
+
+    return rest_api_source(config)

@@ -16,7 +16,7 @@ import argparse
 import os
 import sys
 import dlt
-from .sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source
+from .sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source, ft_dk_mode_source
 
 
 # Map source names to their functions
@@ -32,6 +32,10 @@ SOURCES = {
     "cases": {
         "function": ft_dk_sag_source,  # Placeholder for future case source
         "description": "Danish parliament cases (Sag, Sagsstatus, Sagstype, )"
+    },
+    "meeting": {
+        "function": ft_dk_mode_source,
+        "description": "Parliamentary meetings in plenum and committees (Møde, Mødetype, Mødestatus)"
     }
 }
 
@@ -107,7 +111,7 @@ Examples:
         "source",
         nargs="?",
         default=None,
-        help="Source to run ('actors', 'votes', or 'all'), or '--list' to show available",
+        help="Source to run ('actors', 'votes', 'cases', 'meetings' or 'all'), or '--list' to show available",
     )
     parser.add_argument(
         "--resources",
