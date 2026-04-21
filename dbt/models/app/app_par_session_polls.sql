@@ -6,6 +6,7 @@
 
 SELECT 
     P.poll_id
+    , C.id AS case_id
     , P.conclusion
     , P.adopted
     , M.meeting_date
@@ -21,11 +22,11 @@ SELECT
     , C.case_title_short
     , C.case_reasoning
 
-FROM {{ref('stg_polls')}} P
+FROM {{ref('stg_poll')}} P
 INNER JOIN {{ref('stg_case_step')}} CS ON P.case_step_id = CS.id
-INNER JOIN {{ref("stg_case")}} C ON CS.case_id = C.id
+INNER JOIN {{ref("stg_case")}} C ON CS.case_id = C.case_id
 INNER JOIN {{ref('stg_meeting')}} M ON P.meeting_id = M.meeting_id
-INNER JOIN {{ref('stg_poll_types')}} PT ON P.poll_type_id = PT.id
+INNER JOIN {{ref('stg_poll_type')}} PT ON P.poll_type_id = PT.id
 INNER JOIN {{ ref('stg_case_step_type')}} CST ON CS.case_step_type_id = CST.id
 INNER JOIN {{ ref('stg_case_step_status') }} CSS ON CS.status_id = CSS.id
 INNER JOIN {{ ref('stg_case_type') }} CT ON C.case_type_id = CT.id

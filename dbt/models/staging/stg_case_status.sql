@@ -1,7 +1,7 @@
 {{config(materialized='view') }}
 
 SELECT 
-    id
+    id AS case_status_id
     , status AS case_status
     , opdateringsdato AS updated_at
 

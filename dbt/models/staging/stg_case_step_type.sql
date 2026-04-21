@@ -1,6 +1,6 @@
 {{config(materialized='view') }}
 
-SELECT id
+SELECT id as case_step_type_id
     , type as case_step_type
     , opdateringsdato as updated_at
 

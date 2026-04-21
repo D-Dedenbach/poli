@@ -1,6 +1,6 @@
 {{config(materialized='view') }}
 
-SELECT id
+SELECT id AS category_id
     , kategori as case_category
     , opdateringsdato as updated_at
 

@@ -1,6 +1,6 @@
 {{config(materialized='view')}}
 
-SELECT id
+SELECT id as poll_type_id
     , type as poll_type
     , opdateringsdato as updated_at
 
