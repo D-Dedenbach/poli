@@ -1,13 +1,12 @@
 from transformers import pipeline
 from datetime import datetime
 from tqdm import tqdm
-from pathlib import Path
 
 import duckdb
 import pandas as pd
 import logging
 import argparse
-import sys
+import random
 
 from backend.configs.database import DB_PATH
 from utils.categorization_utils import (load_categories, 
@@ -15,7 +14,8 @@ from utils.categorization_utils import (load_categories,
                                         get_categories_version)
 
 
-# Configure logging
+# --------------------------- Config
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -24,35 +24,93 @@ logger = logging.getLogger(__name__)
 
 # Classifier specs - current version is for internal tracking of changes
 classifier = pipeline("zero-shot-classification", model="MoritzLaurer/mDeBERTa-v3-base-mnli-xnli")
-current_version = 1
+current_version = 2
+
+# Fetch uncategorized cases and insert categorizations
+FETCH_UNCATEGORIZED_CASES = """
+SELECT id
+    , case_title
+    , case_reasoning 
+FROM dev.stg_case C 
+WHERE NOT EXISTS (
+    SELECT 1 FROM dev.stg_case_cat_zeroshot CAT 
+    WHERE CAT.case_id = C.id
+      AND CAT.cat_version = {cat_version}
+      AND CAT.classifier_version = {classifier_version}
+)
+ORDER BY C.updated_at DESC 
+LIMIT {size} ;
+"""
+
+INSERT_CATEGORIZED_CASES = """
+INSERT INTO dev.stg_case_cat_zeroshot (case_id, cat_name, confidence_score, cat_version, created_at, classifier_version)
+SELECT case_id, cat_name, confidence_score, cat_version, created_at, classifier_version FROM scores_temp;
+"""
+
+INSERT_RAW_SCORES = """
+INSERT INTO dev.stg_case_scores_raw (case_index, cat_name, confidence_score, batch_timestamp)
+SELECT case_index, cat_name, confidence_score, {batch_timestamp} FROM scores_raw;
+"""
 
 
-def classify_text(text):
+# -------------------------- Scripting
+
+def get_classification_scores(texts: list[str]) -> pd.DataFrame:
     """
-    Classify the input text into one or more of the candidate labels using zero-shot classification.
-    For each label a confidence score between 0 an 1 is returned.
-
-    Parameters:
-    - text (str): The input text to classify.
-    - candidate_labels (list of str): The list of candidate labels to classify the text into
+    Classify a batch of texts.
+    Returns DataFrame with 1 column for sequence and 1 column per label with scores.
     """
-    
-    # Categories are fixed
-    cat = load_categories()
-    cat_slugs = load_slug_category_names()
 
-    result = classifier(text, cat, multi_label=True)
-    labelled_scores = list(zip(cat_slugs, result['scores']))
+    categories = load_categories()
 
-    df_scores = pd.DataFrame(labelled_scores, columns=['category', 'score'])
-    # Turn scores into dict and label with slug names in order to load into df
-    return df_scores
+    category_names = [cat['name'] + ":" + cat['description'] for cat in categories]
+    shuffled_names = category_names.copy()
+    random.shuffle(shuffled_names)
+
+    results = classifier(texts, shuffled_names, multi_label=True)
+
+    output_data = []
+    for result in results:
+        row = {'sequence': result['sequence']}
+        for label, score in zip(result['labels'], result['scores']):
+            row[label] = score
+        output_data.append(row)
+
+    return pd.DataFrame(output_data)
+
+
+def transform_scores_to_results(
+    scores_df: pd.DataFrame,
+    cases_df: pd.DataFrame,
+    cat_version: int,
+    classifier_version: int,
+    batch_timestamp: str
+) -> pd.DataFrame:
+    """
+    Transform classification scores into database-ready format.
+    Returns DataFrame with columns: case_id, cat_name, confidence_score,
+    cat_version, created_at, classifier_version
+    """
+
+    result_df = pd.merge(
+        scores_df,
+        cases_df[['id']].reset_index(),
+        left_on='case_index',
+        right_on='index'
+    )
+
+    return result_df.rename(columns={'id': 'case_id'}).assign(
+        cat_version=cat_version,
+        classifier_version=classifier_version,
+        created_at=batch_timestamp
+    )[[ 'case_id', 'cat_name', 'confidence_score', 'cat_version', 'created_at', 'classifier_version']]
 
 
 
 def classify_case_batch(size: int = 100):
     """
     Function Queries uncategorized cases from stg_case and runs a classifier on them.
+    Uses batch processing with size 32 for optimal GPU utilization.
     Finally loads the classified cases into stg_case_cat_zeroshot.
     
     Returns:
@@ -73,30 +131,18 @@ def classify_case_batch(size: int = 100):
     }
     
     try:
-        # Get versions of categories and classifier that the compute will work on
         cat_version = get_categories_version()
         classifier_version = current_version
         batch_timestamp = datetime.now().isoformat()
 
         logger.info(f"Starting classification batch | cat_version={cat_version}, classifier_version={classifier_version}, size={size}")
 
-        # Case data will be in the stg_case table. Usually text is in the title and sometimes in the reasoning column.
-        fetch_qry = f"""
-        SELECT id
-            , case_title
-            , case_reasoning 
-        FROM dev.stg_case C 
-        WHERE NOT EXISTS (
-            SELECT 1 FROM dev.stg_case_cat_zeroshot CAT 
-            WHERE CAT.case_id = C.id
-              AND CAT.cat_version = {cat_version}
-              AND CAT.classifier_version = {classifier_version}
+        fetch_qry = FETCH_UNCATEGORIZED_CASES.format(
+            cat_version=cat_version,
+            classifier_version=classifier_version,
+            size=size
         )
-        ORDER BY C.updated_at DESC 
-        LIMIT {size} ;
-        """
 
-        # Fetch case data from database
         conn = duckdb.connect(database=DB_PATH)
         df = conn.execute(fetch_qry).fetchdf()
         metrics['cases_fetched'] = len(df)
@@ -105,44 +151,45 @@ def classify_case_batch(size: int = 100):
         if df.empty:
             logger.info("No cases to process - exiting")
             metrics['success'] = True
+            conn.close()
             return metrics
 
-        # Create input for the classifier model and apply classifier. 
         df['categorization_text'] = df['case_title'].fillna('') + ': ' + df['case_reasoning'].fillna('')
+        texts = df['categorization_text'].tolist()
 
-        # Apply classification and extract scores to df
-        scores_data = []  # List of dicts
-        for _, row in tqdm(df.iterrows(), total=len(df), desc='Classifying cases'):
-            df_row_scores = classify_text(row['categorization_text'])
-            scores_data.extend({
-                'case_id': row['id'],
-                'cat_name': score_row['category'],
-                'confidence_score': score_row['score'],
-                'cat_version': cat_version,
-                'classifier_version': classifier_version,
-                'created_at': batch_timestamp
-            } for _, score_row in df_row_scores.iterrows())
+        # Classify in batches of 32, using pipeline's native parallelism
+        batch_size = 32
+        all_scores = []
 
-        # This is the final product of data 
-        df_scores = pd.DataFrame(scores_data)
-        metrics['scores_generated'] = len(df_scores)
-        logger.info(f"Generated {metrics['scores_generated']} scores for {df['id'].nunique()} cases")
+        for i in tqdm(range(0, len(texts), batch_size), desc='Classifying'):
+            batch_texts = texts[i:i + batch_size]
+            batch_scores = get_classification_scores(batch_texts)
+            batch_scores['case_index'] += i
+            all_scores.append(batch_scores)
+            print(batch_scores)
 
-        # Insert. Column names must be specified in insert statement due to auto-increment ID column not populated explicitly
-        # Column names must also be specified in SELECT statement to ensure correct matching of df to table columns
-        insert_qry = """
-        INSERT INTO dev.stg_case_cat_zeroshot (case_id, cat_name, confidence_score, cat_version, created_at, classifier_version)
-        SELECT case_id, cat_name, confidence_score, cat_version, created_at, classifier_version FROM scores_temp;
-        """
+        scores_df = pd.concat(all_scores, ignore_index=True)
         
-        # In order for duckdb to be able to use the table, it needs to register
-        conn.register('scores_temp', df_scores)
-        result = conn.execute(insert_qry)
-        metrics['rows_inserted'] = len(df_scores)
-        logger.info(f"Inserted {metrics['rows_inserted']} rows created at {batch_timestamp} into dev.stg_case_cat_zeroshot")
+        # Insert raw scores
+        insert_raw_qry = INSERT_RAW_SCORES.format(batch_timestamp=f"'{batch_timestamp}'")
+        conn.register('scores_raw', scores_df)
+        conn.execute(insert_raw_qry)
+        conn.unregister('scores_raw')
+        
+        final_data = transform_scores_to_results(
+            scores_df, df, cat_version, classifier_version, batch_timestamp
+        )
+
+        logger.info(f"Generated {len(final_data)} scores for {df['id'].nunique()} cases")
+
+        conn.register('scores_temp', final_data)
+        conn.execute(INSERT_CATEGORIZED_CASES)
+        metrics['scores_generated'] = len(final_data)
+        metrics['success'] = True
+        
+        logger.info(f"Inserted {metrics['scores_generated']} rows into dev.stg_case_cat_zeroshot")
         
         conn.unregister('scores_temp')
-        metrics['success'] = True
         
     except Exception as e:
         logger.error(f"Classification batch failed: {str(e)}", exc_info=True)

@@ -14,7 +14,7 @@ def load_categories() -> list[str]:
     with config_path.open() as f:
         categories = yaml.safe_load(f)["categories"]
 
-    return [f"{cat['name']}: {cat['description']}" for cat in categories]
+    return categories
 
 def load_slug_category_names() -> list[str]:
     """

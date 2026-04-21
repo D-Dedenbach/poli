@@ -1,12 +1,42 @@
 # config/categories.yaml
-version: 1
+version: 4
 categories:
-  - name: "Miljø"
-    description: "Klima, natur, forurening, og energipolitik."
-    slug: "miljoe"
-  - name: "Sundhed"
-    description: "Sygehuse, offentlig sundhed, og medicinsk forskning."
-    slug: "sundhed"
-  - name: "Uddannelse"
-    description: "Skoler, universiteter, og uddannelsespolitik."
-    slug: "uddannelse"
+  - name: "Økonomi og Beskæftigelse"
+    slug: "okonomi_og_beskæftigelse"
+    description: "Dette handler om økonomi, beskæftigelse, skatter, budgetter, erhvervslovgivning, arbejdsmarked, virksomhedsstøtte eller finansielle bevillinger (ikke miljø, social velfærd eller forskning)."
+
+  - name: "Social og Sundhed"
+    slug: "social_og_sundhed"
+    description: "Dette handler om social velfærd, sundhedsvæsen, ældrepleje, handicap, folkesundhed, sygehuse eller sociale ydelser (ikke økonomiske bevillinger til sundhedsvæsenet)."
+
+  - name: "Uddannelse og Forskning"
+    slug: "uddannelse_og_forskning"
+    description: "Dette handler om uddannelse, skoler, universiteter, forskning, innovation, digitalisering i undervisning eller videnskabelige bevillinger (ikke ren teknologiudvikling eller erhvervsrettede uddannelser)."
+
+  - name: "Miljø, Klima og Energi"
+    slug: "miljo_klima_og_energi"
+    description: "Dette handler om miljø, klima, bæredygtighed, energipolitik, affald, naturfredning eller grøn omstilling (ikke byplanlægning, transport eller landbrug)."
+
+  - name: "Landbrug, Fødevarer og Fiskeri"
+    slug: "landbrug_foedevarer_og_fiskeri"
+    description: "Dette handler om landbrug, fødevarer, fiskeri, dyrevelfærd eller landdistrikters udvikling (ikke miljøregulering eller international handel)."
+
+  - name: "Infrastruktur og Transport"
+    slug: "infrastruktur_og_transport"
+    description: "Dette handler om fysisk infrastruktur, transport, boliger, byplanlægning, veje, kollektiv transport eller byggeprojekter (ikke digital infrastruktur eller energinet)."
+
+  - name: "Kultur, Turisme og Fritid"
+    slug: "kultur_turisme_og_fritid"
+    description: "Dette handler om kultur, turisme, sport, medier, fritidsaktiviteter, kunst, museer eller events (ikke økonomiske aspekter af turisme)."
+
+  - name: "Integration og Migration"
+    slug: "integration_og_migration"
+    description: "Dette handler om integration, immigration, asyl, flygtninge, statsborgerskab eller udlændingepolitik (ikke sociale ydelser til indvandrere)."
+
+  - name: "Sikkerhed og Retsvæsen"
+    slug: "sikkerhed_og_retsvæsen"
+    description: "Dette handler om sikkerhed, kriminalitet, politi, forsvar, retssystemet, cyberkriminalitet eller lovgivning om straffe (ikke international sikkerhedspolitik)."
+
+  - name: "Udenrigs- og EU-anliggender"
+    slug: "udenrigs_og_eu_anliggender"
+    description: "Dette handler **udelukkende** om internationale forhandlinger, EU-samarbejde, udenrigspolitik eller traktater (ikke indhold om emner som klima, handel eller sikkerhed, medmindre teksten udelukkende omhandler den internationale proces)."

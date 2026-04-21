@@ -18,4 +18,6 @@ dependencies = [
     "duckdb>=1.4.4",
     "pandas>=3.0.2",
     "tqdm>=4.67.3",
+    "jupyterlab>=4.2.0",
+    "ipykernel>=6.29.0",
 ]
