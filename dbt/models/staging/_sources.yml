@@ -61,6 +61,15 @@ sources:
             description: Last update timestamp
             tests:
               - not_null
+      - name: member_vote_types
+        description: Types of votes (for/against/neither/absent)
+        columns:
+          - name: id
+            tests: 
+              - unique
+              - not_null
+          - name: type
+          - name: opdateringsdato
       - name: case_step
         description: Raw case step data from ft.dk OData API
         columns:
