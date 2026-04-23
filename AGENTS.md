@@ -1,0 +1,2 @@
+- Always use uv run to run python commands. All python packages are to be installed via uv in .venv
+- Never delete the database (currently data/data.duckdb)
