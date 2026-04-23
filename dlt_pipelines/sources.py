@@ -14,6 +14,41 @@ from dlt.sources.rest_api import rest_api_source
 
 
 @dlt.source
+def ft_dk_relations_source():
+    """
+    Source for Danish parliament relationship and period data from OData API.
+
+    Fetches relation and period tables:
+    - periods: Temporal periods for parliament sessions (Periode)
+    - role_definitions: Actor role definitions for relationships (AktørAktørRolle)
+
+    Uses automatic pagination via offset/limit and incremental loading via opdateringsdato.
+    """
+
+    config = {
+        "client": {
+            "base_url": "https://oda.ft.dk/api",
+            "paginator": {
+                "type": "offset",
+                "total_path": None,
+                "limit": 100,
+                "limit_param": "$top",
+                "offset_param": "$skip"
+            },
+        },
+        "resources": [
+            {
+                "name": "periods",
+                "endpoint": "Periode?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+        ]
+    }
+    return rest_api_source(config)
+
+
+@dlt.source
 def ft_dk_actor_source():
     """
     Source for Danish parliament actor data from OData API.

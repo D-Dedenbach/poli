@@ -16,7 +16,7 @@ import argparse
 import os
 import sys
 import dlt
-from .sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source, ft_dk_mode_source
+from .sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source, ft_dk_mode_source, ft_dk_relations_source
 
 
 # Map source names to their functions
@@ -36,6 +36,10 @@ SOURCES = {
     "meeting": {
         "function": ft_dk_mode_source,
         "description": "Parliamentary meetings in plenum and committees (Møde, Mødetype, Mødestatus)"
+    },
+    "relations": {
+        "function": ft_dk_relations_source,
+        "description": "Parliamentary periods and actor-actor roles (Periode, AktørAktørRolle)"
     }
 }
 
