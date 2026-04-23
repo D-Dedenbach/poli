@@ -1,0 +1,45 @@
+sources:
+  - name: raw
+    database: data
+    schema: raw
+    tables:
+      - name: meeting
+        description: Raw meeting data for meetings in plenum (full parliament) and in committees
+        columns: 
+          - name: id
+            description: Unique meeting type identifier
+            tests:
+              - unique
+              - not_null
+          - name: titel
+            description: Meeting title
+          - name: lokale
+          - name: nummer
+          - name: dagsordenurl
+          - name: starttidsbem_rkning
+          - name: offentlighedskode
+          - name: dato
+          - name: statusid
+          - name: typeid
+          - name: periodeid
+          - name: opdateringsdato
+      - name: meeting_type
+        description: Type of meeting (plenum/committee/other/etc)
+        columns:
+          - name: id
+            description: unique identifier
+            tests:
+              - unique
+              - not_null
+          - name: type
+          - name: opdateringsdato
+      - name: meeting_status
+        description: Status of meeting (Whether planned / cancelled / postponed / etc.)
+        columns:
+          - name: id
+            description: unique identifier
+            tests:
+              - unique
+              - not_null
+          - name: status
+          - name: opdateringsdato

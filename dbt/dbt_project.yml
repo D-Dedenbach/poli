@@ -14,6 +14,7 @@ seeds:
   # Builds seeds into '<your_schema_name>_raw'
   poli_transform:
     +schema: raw
+    +pre-hook: "PRAGMA enable_wal;"
 
 models:
   poli_transform:
