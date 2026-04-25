@@ -37,3 +37,19 @@ sources:
             description: Actor type name (Danish)
             tests:
               - not_null
+      - name: actor_actor
+        description: Fact table of relationships between actors
+        columns:
+          - name: id
+          - name: fraakt_rid
+          - name: tilakt_rid
+          - name: startdato
+          - name: slutdato
+          - name: rolleid
+          - name: opdateringsdato
+      - name: actor_actor_roles
+        description: Type of relationships possible between 2 actors
+        columns:
+          - name: id
+          - name: rolle
+          - name: opdateringsdato

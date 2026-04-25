@@ -1,0 +1,19 @@
+sources:
+  - name: raw
+    database: data
+    schema: raw
+    tables:
+      - name: periods
+        description: Data for periods of ft. 
+        columns: 
+          - name: id
+            description: Unique meeting type identifier
+            tests:
+              - unique
+              - not_null
+          - name: startdato
+          - name: slutdato
+          - name: type
+          - name: kode
+          - name: titel
+          - name: opdateringsdato
