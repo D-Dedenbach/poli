@@ -35,11 +35,11 @@ WHERE AA.role = 'medlem'
 
 
 SELECT AA.actor_actor_id
-    , AA.from_actor_id
-    , AA.to_actor_id
+    , AA.from_actor_id as member_id
+    , AA.to_actor_id as party_id
     , PM.party_relation_id
-    , MAX(FT.ft_period_start_date, COALESCE(PM.party_membership_start_date, now())) AS record_validity_start_date
-    , MIN(FT.ft_period_end_date, COALESCE(PM.party_membership_end_date, now())) AS record_validity_end_date
+    , GREATEST(FT.ft_period_start_date, COALESCE(PM.party_membership_start_date, now())) AS record_validity_start_date
+    , GREATEST(FT.ft_period_end_date, COALESCE(PM.party_membership_end_date, now())) AS record_validity_end_date
     , AA.role
     , A.actor_name AS member_name
     , FT.start_date
@@ -49,7 +49,8 @@ SELECT AA.actor_actor_id
     , PM.party_membership_start_date
     , PM.party_membership_end_date
     , FT.period_title
-    , PM.group_name_short
+    , PM.group_name_short AS party_abbr
+    , PM.actor_name AS party_name
 FROM {{ ref('stg_actor_actor') }} AA
 INNER JOIN {{ ref('stg_actors') }} A ON AA.from_actor_id = A.actor_id
 INNER JOIN ft_periods FT ON AA.to_actor_id = FT.actor_id
