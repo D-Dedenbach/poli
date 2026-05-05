@@ -1,12 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query, HTTPException
+from typing import List, Dict, Any
 import duckdb
 
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from utils.categorization_utils import load_categories
-from transform_scripts.classifier import classify_text
 
 app = FastAPI()
 
@@ -43,6 +42,41 @@ def get_votes(actor_id: int):
     votes = [dict(zip(columns, row)) for row in result]
 
     return {"actor_id": actor_id, "votes": votes}
+
+@app.get("/polls/latest", response_model=List[Dict[str, Any]])
+def get_latest_polls(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(20, le=100, description="Number of records to return (max 100)"),
+    ):
+
+    """
+    Fetch the latest polls, ordered by meeting date and poll ID. 
+    Paginated: returns 'limit' records, skipping 'skip' records
+    """
+    query = """
+    SELECT
+        poll_id,
+        party_abbr,
+        vote_type,
+        poll_type,
+        meeting_date,
+        title,
+        adopted,
+        vote_count
+    FROM dev.app_poll_outcome
+    ORDER BY meeting_date DESC, poll_id DESC
+    LIMIT ? OFFSET ?
+    """
+    try:
+        df = conn.execute(query, [limit, skip]).fetchdf()
+
+                # Convert to list of dicts
+        poll_results = df.to_dict(orient="records")
+
+        return poll_results
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 
