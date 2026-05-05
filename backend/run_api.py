@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query, HTTPException
 from typing import List, Dict, Any
+from datetime import datetime
 import duckdb
 
 import sys
@@ -54,26 +55,52 @@ def get_latest_polls(
     Paginated: returns 'limit' records, skipping 'skip' records
     """
     query = """
+    WITH grouped_polls AS (
+        SELECT
+            poll_id,
+            title,
+            meeting_date,
+            poll_type,
+            adopted,
+            JSON_GROUP_ARRAY(
+                JSON_OBJECT(
+                        'party_abbr', party_abbr,
+                        'vote_type', vote_type,
+                        'vote_count', vote_count
+                )
+            ) AS parties
+        FROM dev.app_poll_outcome
+        GROUP BY poll_id, title, meeting_date, poll_type, adopted
+    )
     SELECT
         poll_id,
-        party_abbr,
-        vote_type,
-        poll_type,
-        meeting_date,
         title,
+        meeting_date,
+        poll_type,
         adopted,
-        vote_count
-    FROM dev.app_poll_outcome
-    ORDER BY meeting_date DESC, poll_id DESC
+        parties
+    FROM grouped_polls
+    ORDER BY meeting_date DESC
     LIMIT ? OFFSET ?
     """
     try:
-        df = conn.execute(query, [limit, skip]).fetchdf()
+        result = conn.execute(query, [limit, skip]).fetchall()
 
-                # Convert to list of dicts
-        poll_results = df.to_dict(orient="records")
+        # Convert to list of dicts (handle DuckDB's nested structures)
+        polls = []
+        for row in result:
+            poll_dict = {
+                "poll_id": row[0],
+                "title": row[1],
+                "meeting_date": row[2].isoformat() if isinstance(row[2], datetime) else row[2],
+                "poll_type": row[3],
+                "adopted": row[4],
+                "parties": row[5],  # row[5] is the 'parties' array
+                
+            }
+            polls.append(poll_dict)
 
-        return poll_results
+        return polls
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
