@@ -1,6 +1,7 @@
 WITH poll_meeting as 
 (
 SELECT P.poll_id
+    , P.case_step_id
     , V.vote_id
     , V.vote_type
     , V.actor_id

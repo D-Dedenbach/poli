@@ -55,50 +55,35 @@ def get_latest_polls(
     Paginated: returns 'limit' records, skipping 'skip' records
     """
     query = """
-    WITH grouped_polls AS (
-        SELECT
-            poll_id,
-            title,
-            meeting_date,
-            poll_type,
-            adopted,
-            JSON_GROUP_ARRAY(
-                JSON_OBJECT(
-                        'party_abbr', party_abbr,
-                        'vote_type', vote_type,
-                        'vote_count', vote_count
-                )
-            ) AS parties
-        FROM dev.app_poll_outcome
-        GROUP BY poll_id, title, meeting_date, poll_type, adopted
-    )
-    SELECT
-        poll_id,
-        title,
-        meeting_date,
-        poll_type,
-        adopted,
-        parties
-    FROM grouped_polls
-    ORDER BY meeting_date DESC
-    LIMIT ? OFFSET ?
+        SELECT poll_id
+        , party_abbr
+        , vote_type
+        , poll_type
+        , meeting_date
+        , meeting_title
+        , adopted
+        , case_step_title
+        , case_step_status
+        , case_step_type
+        , case_title
+        , case_title_short
+        , decision
+        , case_category
+        , case_reasoning
+        , case_status
+    FROM dev.app_poll_outcome
+    ORDER BY meeting_date DESC, poll_id DESC
+    LIMIT ? OFFSET ?;
     """
     try:
         result = conn.execute(query, [limit, skip]).fetchall()
 
         # Convert to list of dicts (handle DuckDB's nested structures)
-        polls = []
-        for row in result:
-            poll_dict = {
-                "poll_id": row[0],
-                "title": row[1],
-                "meeting_date": row[2].isoformat() if isinstance(row[2], datetime) else row[2],
-                "poll_type": row[3],
-                "adopted": row[4],
-                "parties": row[5],  # row[5] is the 'parties' array
-                
-            }
-            polls.append(poll_dict)
+        if not result:
+            return []
+        
+        columns = [desc[0] for desc in conn.description]
+        polls = [dict(zip(columns, row)) for row in result]
 
         return polls
     
