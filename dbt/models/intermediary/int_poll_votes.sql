@@ -16,12 +16,21 @@ INNER JOIN {{ ref('stg_meeting') }} M ON P.meeting_id = M.meeting_id
 INNER JOIN {{ ref('stg_vote') }} V ON V.poll_id = P.poll_id
 )
 
-SELECT PM.*
+SELECT PM.poll_id
+    , PM.case_step_id
+    , PM.vote_type
+    , PM.adopted
+    , PM.poll_type
+    , PM.meeting_date
+    , PM.period_id
+    , PM.title
     , MEM.party_abbr
     , MEM.party_name
+    , count(DISTINCT PM.vote_id) AS vote_count
 
 
 
 FROM poll_meeting PM
 INNER JOIN {{ ref('int_parliament_members') }} MEM ON PM.actor_id = MEM.member_id 
                                                     AND PM.meeting_date BETWEEN MEM.record_validity_start_date AND MEM.record_validity_end_date
+GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10

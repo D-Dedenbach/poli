@@ -56,8 +56,6 @@ def get_latest_polls(
     """
     query = """
         SELECT poll_id
-        , party_abbr
-        , vote_type
         , poll_type
         , meeting_date
         , meeting_title
@@ -71,6 +69,7 @@ def get_latest_polls(
         , case_category
         , case_reasoning
         , case_status
+        , votes
     FROM dev.app_poll_outcome
     ORDER BY meeting_date DESC, poll_id DESC
     LIMIT ? OFFSET ?;
