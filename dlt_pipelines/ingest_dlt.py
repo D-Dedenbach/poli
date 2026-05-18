@@ -76,6 +76,7 @@ def run_pipeline(source_name: str, resources: list[str] | None = None):
         pipeline_name=f"ft_dk_{source_name}",
         destination="duckdb",
         dataset_name="raw",
+        pre_sql=["PRAGMA enable_wal;"],
         progress=dlt.progress.log(10)
     )
     

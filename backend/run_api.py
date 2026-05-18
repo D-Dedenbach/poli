@@ -69,7 +69,11 @@ def get_latest_polls(
         , case_category
         , case_reasoning
         , case_status
-        , votes
+        , for_votes
+        , against_votes
+        , absent_votes
+        , abstain_votes
+        , for_against_proportionality
     FROM dev.app_poll_outcome
     ORDER BY meeting_date DESC, poll_id DESC
     LIMIT ? OFFSET ?;
