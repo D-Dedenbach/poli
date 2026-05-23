@@ -17,7 +17,10 @@ SELECT PV.poll_id
     , ABSENTV.type_votes AS absent_votes
     , ABSTAINV.type_votes AS abstain_votes
     , COALESCE(FORV.total_type_votes, 0) / ( COALESCE(FORV.total_type_votes, 0) + COALESCE(AGAINSTV.total_type_votes, 0)) AS for_against_proportionality
-
+    , COALESCE(FORV.total_type_votes, 0) AS total_for_votes
+    , COALESCE(AGAINSTV.total_type_votes, 0) AS total_against_votes
+    , COALESCE(ABSENTV.total_type_votes, 0) AS total_absent_votes
+    , COALESCE(ABSTAINV.total_type_votes, 0) AS total_abstain_votes
 
 FROM {{ ref('int_case_info') }} C
 INNER JOIN {{ ref('int_poll_votes') }} PV ON C.case_step_id = PV.case_step_id
@@ -26,4 +29,4 @@ LEFT JOIN {{ ref('int_poll_votes') }} AGAINSTV ON AGAINSTV.poll_id = PV.poll_id 
 LEFT JOIN {{ ref('int_poll_votes') }} ABSENTV ON ABSENTV.poll_id = PV.poll_id AND ABSENTV.vote_type = 'Fravær'
 LEFT JOIN {{ ref('int_poll_votes') }} ABSTAINV ON ABSTAINV.poll_id = PV.poll_id AND ABSTAINV.vote_type = 'Hverken for eller imod'
 
-GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
