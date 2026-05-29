@@ -1,8 +1,8 @@
-SELECT PV.poll_id
-    , PV.poll_type
-    , STRFTIME(PV.meeting_date, '%d-%m-%Y') AS meeting_date
-    , PV.title AS meeting_title
-    , CASE WHEN PV.adopted = True Then 'Vedtaget' ELSE 'Forkastet' END AS adopted
+SELECT V.poll_id
+    , V.poll_type
+    , STRFTIME(V.meeting_date, '%d-%m-%Y') AS meeting_date
+    , V.title AS meeting_title
+    , CASE WHEN V.adopted = True THEN 'Vedtaget' ELSE 'Forkastet' END AS adopted
     , C.case_step_title
     , C.case_step_status
     , C.case_step_type
@@ -12,21 +12,15 @@ SELECT PV.poll_id
     , C.case_category
     , C.case_reasoning
     , C.case_status
-    , FORV.type_votes AS for_votes
-    , AGAINSTV.type_votes AS against_votes
-    , ABSENTV.type_votes AS absent_votes
-    , ABSTAINV.type_votes AS abstain_votes
-    , COALESCE(FORV.total_type_votes, 0) / ( COALESCE(FORV.total_type_votes, 0) + COALESCE(AGAINSTV.total_type_votes, 0)) AS for_against_proportionality
-    , COALESCE(FORV.total_type_votes, 0) AS total_for_votes
-    , COALESCE(AGAINSTV.total_type_votes, 0) AS total_against_votes
-    , COALESCE(ABSENTV.total_type_votes, 0) AS total_absent_votes
-    , COALESCE(ABSTAINV.total_type_votes, 0) AS total_abstain_votes
+    , PV.for_against_votes
+    , PV.absent_votes
+    , PV.total_for_votes
+    , PV.total_against_votes
+    , PV.total_absent_votes
+    , PV.total_abstain_votes
+    , COALESCE(PV.total_for_votes, 0) / ( COALESCE(PV.total_for_votes, 0) + COALESCE(PV.total_against_votes, 0)) AS for_against_proportionality
+    
 
 FROM {{ ref('int_case_info') }} C
-INNER JOIN {{ ref('int_poll_votes') }} PV ON C.case_step_id = PV.case_step_id
-LEFT JOIN {{ ref('int_poll_votes') }} FORV ON PV.poll_id = FORV.poll_id AND FORV.vote_type = 'For'
-LEFT JOIN {{ ref('int_poll_votes') }} AGAINSTV ON AGAINSTV.poll_id = PV.poll_id AND AGAINSTV.vote_type = 'Imod'
-LEFT JOIN {{ ref('int_poll_votes') }} ABSENTV ON ABSENTV.poll_id = PV.poll_id AND ABSENTV.vote_type = 'Fravær'
-LEFT JOIN {{ ref('int_poll_votes') }} ABSTAINV ON ABSTAINV.poll_id = PV.poll_id AND ABSTAINV.vote_type = 'Hverken for eller imod'
-
-GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+INNER JOIN {{ ref('int_votes_per_party') }} V ON C.case_step_id = V.case_step_id
+INNER JOIN {{ ref('int_poll_votes') }} PV ON V.poll_id = PV.poll_id
