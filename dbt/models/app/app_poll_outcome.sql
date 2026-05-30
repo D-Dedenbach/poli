@@ -18,6 +18,17 @@ SELECT V.poll_id
     , PV.total_against_votes
     , PV.total_absent_votes
     , PV.total_abstain_votes
+    , JSON_ARRAY(
+        
+        JSON_OBJECT('party_abbr', '', 
+                    'vote_type', 'for', 
+                    'votes', PV.total_for_votes,
+                    'color', '#C3DDC5'),
+        JSON_OBJECT('party_abbr', '', 
+                    'vote_type', 'against', 
+                    'votes', PV.total_against_votes,
+                    'color', '#F1CCCC')
+    ) AS total_for_against_array
     , COALESCE(PV.total_for_votes, 0) / ( COALESCE(PV.total_for_votes, 0) + COALESCE(PV.total_against_votes, 0)) AS for_against_proportionality
     
 

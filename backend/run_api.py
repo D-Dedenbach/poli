@@ -65,15 +65,14 @@ def get_latest_polls(
         , case_category
         , case_reasoning
         , case_status
-        , for_votes
-        , against_votes
+        , for_against_votes
         , absent_votes
-        , abstain_votes
         , for_against_proportionality
         , total_for_votes
         , total_against_votes
         , total_absent_votes
         , total_abstain_votes
+        , total_for_against_array
     FROM dev.app_poll_outcome
     ORDER BY meeting_date DESC, poll_id DESC
     LIMIT ? OFFSET ?;

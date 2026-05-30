@@ -5,9 +5,11 @@ import json
 from typing import TypedDict, List, cast
 from datetime import datetime
 
-class PartyVoteItem(TypedDict):
+class PieSlice(TypedDict):
     party_abbr: str
+    vote_type: str
     votes: int
+    color: str
 
 
 class PollData(TypedDict):
@@ -17,13 +19,32 @@ class PollData(TypedDict):
     adopted: bool
     case_title_short: str
     case_category: str
-    for_votes: List[PartyVoteItem]
-    against_votes: List[PartyVoteItem]
-    absent_votes: List[PartyVoteItem]
-    abstain_votes: List[PartyVoteItem]
+    for_against_votes: List[PieSlice]
+    absent_votes: List[PieSlice]
     for_against_proportionality: float
     total_for_votes: int
     total_against_votes: int
+    total_absent_votes: int
+    total_abstain_votes: int
+    total_for_against_array: List[PieSlice]
+
+class EnrichedPollData(TypedDict):
+    poll_id: int
+    poll_type: str
+    meeting_date: datetime
+    adopted: bool
+    case_title_short: str
+    case_category: str
+    for_against_votes: List[PieSlice]
+    absent_votes: List[PieSlice]
+    for_against_proportionality: float
+    total_for_votes: int
+    total_against_votes: int
+    total_absent_votes: int
+    total_abstain_votes: int
+    total_for_against_array: List[PieSlice]
+    for_start_angle: int
+    against_end_angle: int
 
 
 def calc_pie_angle(proportionality: float, type: str = 'start', buffer: float = 3.0, clockwise: bool = False) -> float:
@@ -78,14 +99,14 @@ class PollOutcomeState(rx.State):
                     "adopted": item["adopted"],
                     "case_title_short": item["case_title_short"],
                     "case_category": item["case_category"],
-                    "for_votes": cast(List[PartyVoteItem], json.loads(item["for_votes"]) if item["for_votes"] else []),
-                    "against_votes": cast(List[PartyVoteItem], json.loads(item["against_votes"]) if item["against_votes"] else []),
-                    "absent_votes": cast(List[PartyVoteItem], json.loads(item["abstain_votes"]) if item["abstain_votes"] else []),
-                    "abstain_votes": cast(List[PartyVoteItem], json.loads(item["abstain_votes"]) if item["abstain_votes"] else []),
+                    "for_against_votes": cast(List[PieSlice], json.loads(item["for_against_votes"]) if item["for_against_votes"] else []),
+                    "absent_votes": cast(List[PieSlice], json.loads(item["absent_votes"]) if item["absent_votes"] else []),
                     "for_against_proportionality": float(item["for_against_proportionality"]),
                     "total_for_votes": int(item['total_for_votes']),
                     "total_against_votes": int(item['total_against_votes']),
-
+                    "total_absent_votes": int(item["total_absent_votes"]),
+                    "total_abstain_votes": int(item['total_abstain_votes']),
+                    "total_for_against_array": cast(List[PieSlice], json.loads(item["total_for_against_array"]) if item["total_for_against_array"] else [])
                 }
                 for item in payload
             ]    
@@ -96,17 +117,14 @@ class PollOutcomeState(rx.State):
         
         finally:
             self.is_loading = False
-            print(f"data: {self.data}")
 
     @rx.var
-    def enriched_data(self) -> List[dict]:
+    def enriched_data(self) -> List[EnrichedPollData]:
         return [
             {
             **item,
-            'l_start_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', buffer=2.0),
-            'l_end_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='end', buffer=2.0),
-            'r_start_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', clockwise=True, buffer=2.0),
-            'r_end_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='end', clockwise=True, buffer=2.0),
+            'for_start_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', buffer=0.0),
+            'against_end_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', buffer=0.0) + 360,
             }
             for item in self.data
         ]

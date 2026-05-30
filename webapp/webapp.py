@@ -5,11 +5,11 @@ import json
 from typing import List
 from datetime import datetime
 
-from webapp.states.poll_outcome_state import PollOutcomeState
-from webapp.components.poll_outcome_donut import pie_chart_container
+from webapp.states.poll_outcome_state import PollOutcomeState, EnrichedPollData
+from webapp.components.poll_outcome_donut import for_against_chart_container, absent_chart_container
     
 
-def poll_card(poll_dict: dict):    
+def poll_card(poll_dict: EnrichedPollData) -> rx.Component:    
 
     return rx.card(
         rx.vstack(
@@ -35,7 +35,15 @@ def poll_card(poll_dict: dict):
                 rx.text(poll_dict['case_title_short'])
 
             ),
-            pie_chart_container(poll_dict)
+            rx.hstack(
+                for_against_chart_container(poll_dict, tcss_width="3/6"),
+                absent_chart_container(poll_dict, tcss_width="3/6"),
+                rx.spacer(),
+                width="100%"
+            )
+           
+
+
         )
 
     )
