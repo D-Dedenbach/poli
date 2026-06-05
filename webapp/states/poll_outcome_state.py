@@ -9,7 +9,7 @@ class PieSlice(TypedDict):
     party_abbr: str
     vote_type: str
     votes: int
-    color: str
+    fill: str
 
 
 class PollData(TypedDict):
@@ -95,7 +95,7 @@ class PollOutcomeState(rx.State):
                 {
                     "poll_id": int(item['poll_id']),
                     "poll_type": item["poll_type"],
-                    "meeting_date": datetime.strptime(item['meeting_date'], "%d-%m-%Y"),
+                    "meeting_date": item["meeting_date"],
                     "adopted": item["adopted"],
                     "case_title_short": item["case_title_short"],
                     "case_category": item["case_category"],

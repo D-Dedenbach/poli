@@ -3,7 +3,7 @@ from webapp.states.poll_outcome_state import EnrichedPollData, PieSlice
 
 def pie_cell(slice: PieSlice) -> rx.Component:
     return rx.recharts.cell(
-        fill=slice["color"],
+        fill=slice["fill"],
         stroke="#000000",
         stroke_width=2,
     )
@@ -40,7 +40,7 @@ def for_against_chart_container(data: EnrichedPollData, tcss_width : str = "full
                 data_key="votes",
                 name_key="party_abbr",
                 inner_radius="0%",
-                outer_radius="85%",
+                outer_radius="80%",
                 label=False,
                 fill_opacity=0.8,
                 start_angle=data['for_start_angle'],

@@ -28,7 +28,7 @@ SELECT poll_id
                 'party_abbr', party_abbr,
                 'vote_type', vote_type,
                 'votes', vote_count,
-                'color', party_color
+                'fill', party_color
             )
             -- 2. Sort the aggregate list by the single, pre-calculated column
             ORDER BY sort_index ASC
@@ -40,7 +40,7 @@ SELECT poll_id
                 'party_abbr', party_abbr,
                 'vote_type', vote_type,
                 'votes', vote_count,
-                'color', party_color
+                'fill', party_color
             )
             -- No 2 sections here, so sort by ltr order ordinarily
             ORDER BY sort_index ASC

@@ -1,8 +1,8 @@
-SELECT V.poll_id
-    , V.poll_type
-    , STRFTIME(V.meeting_date, '%d-%m-%Y') AS meeting_date
-    , V.title AS meeting_title
-    , CASE WHEN V.adopted = True THEN 'Vedtaget' ELSE 'Forkastet' END AS adopted
+SELECT C.poll_id
+    , C.poll_type
+    , meeting_date
+    , C.title AS meeting_title
+    , CASE WHEN C.adopted = True THEN 'Vedtaget' ELSE 'Forkastet' END AS adopted
     , C.case_step_title
     , C.case_step_status
     , C.case_step_type
@@ -23,15 +23,14 @@ SELECT V.poll_id
         JSON_OBJECT('party_abbr', '', 
                     'vote_type', 'for', 
                     'votes', PV.total_for_votes,
-                    'color', '#C3DDC5'),
+                    'fill', '#C3DDC5'),
         JSON_OBJECT('party_abbr', '', 
                     'vote_type', 'against', 
                     'votes', PV.total_against_votes,
-                    'color', '#F1CCCC')
+                    'fill', '#F1CCCC')
     ) AS total_for_against_array
     , COALESCE(PV.total_for_votes, 0) / ( COALESCE(PV.total_for_votes, 0) + COALESCE(PV.total_against_votes, 0)) AS for_against_proportionality
     
 
 FROM {{ ref('int_case_info') }} C
-INNER JOIN {{ ref('int_votes_per_party') }} V ON C.case_step_id = V.case_step_id
-INNER JOIN {{ ref('int_poll_votes') }} PV ON V.poll_id = PV.poll_id
+INNER JOIN {{ ref('int_poll_votes') }} PV ON C.poll_id = PV.poll_id
