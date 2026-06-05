@@ -5,6 +5,33 @@ import json
 from typing import TypedDict, List, cast
 from datetime import datetime
 
+# Colors to display parties and vote types. Defined directly here to avoid having to change database entries whenever changing colors.
+DISPLAY_COLORS = {
+    "FG": "#e1f000",
+    "ALT": "#2b8738",
+    "EL": "#e6801a",
+    "IA": "#c20e1a",
+    "N": "#cb5400",
+    "SF": "#e07ea8",
+    "RV": "#733280",
+    "JF": "#e81931",
+    "S": "#a82721",
+    "SIU": "#ffffff",
+    "ANDRE": "#808080",
+    "M": "#b48cd2",
+    "V": "#254264",
+    "SP": "#00678a",
+    "KD": "#8A2BE2",
+    "KF": "#96b226",
+    "LA": "#3fb2be",
+    "DD": "#7896d2",
+    "DF": "#eac73e",
+    "NB": "#1E1E1E",
+    "BP": "#75d6c6",
+    "for": "#243E26",
+    "against": "#7F3333"
+}
+
 class PieSlice(TypedDict):
     party_abbr: str
     vote_type: str
@@ -120,11 +147,20 @@ class PollOutcomeState(rx.State):
 
     @rx.var
     def enriched_data(self) -> List[EnrichedPollData]:
+        def apply_colors(slices: List[PieSlice], key: str) -> List[PieSlice]:
+            return [
+                {**s, "fill": DISPLAY_COLORS.get(s[key], "#CCCCCC")}
+                for s in slices
+            ]
+
         return [
             {
-            **item,
-            'for_start_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', buffer=0.0),
-            'against_end_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', buffer=0.0) + 360,
+                **item,
+                'for_start_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', buffer=0.0),
+                'against_end_angle': calc_pie_angle(item.get('for_against_proportionality', 0.5), type='start', buffer=0.0) + 360,
+                'for_against_votes': apply_colors(item['for_against_votes'], key="party_abbr"),
+                'absent_votes': apply_colors(item['absent_votes'], key="party_abbr"),
+                'total_for_against_array': apply_colors(item['total_for_against_array'], key="vote_type"),
             }
             for item in self.data
         ]

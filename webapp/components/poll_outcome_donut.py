@@ -14,22 +14,21 @@ def for_against_chart_container(data: EnrichedPollData, tcss_width : str = "full
         rx.el.div(
             rx.el.span(
                 "resultat",
-                class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                class_name="text-xs font-bold text-gray-300 uppercase tracking-widest",
             ),
             rx.el.span(
                 rx.el.span(f"{data['total_for_votes']}", class_name="text-green-700 text-2xl font-extrabold tracking-widest"),
-                rx.el.span(":", class_name="mx-2"),
+                rx.el.span(":", class_name="mx-2 text-gray-300"),
                 rx.el.span(f"{data['total_against_votes']}", class_name="text-red-600 text-2xl font-extrabold tracking-widest"),
                 class_name="flex flex-row items-center"
             ),
-            rx.el.hr(class_name="w-2/5 my-1 border-gray-700"),
             rx.el.span(
                 "Stemte Blankt",
-                class_name="text-xs font-bold text-gray-400 uppercase tracking-widest",
+                class_name="text-xs font-bold text-gray-300 uppercase tracking-widest",
             ),
             rx.el.span(
                 f"{data['total_abstain_votes']}",
-                class_name="text-gray-500 text-2xl font-extrabold tracking-widest"
+                class_name="text-gray-300 text-2xl font-extrabold tracking-widest"
             ),
             class_name="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20"
         ),
