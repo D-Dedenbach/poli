@@ -39,7 +39,19 @@ def ft_dk_relations_source():
         "resources": [
             {
                 "name": "periods",
-                "endpoint": "Periode?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "Periode",
+                    "params": {
+                        # Need to help dlt with the exact syntax of the API. Note the closed interval gt ("greater than") filter
+                        # Avoids dlt keeping a large dedupe set for the datetime incremental
+                        # The API provides actual full timestamps -> All data from the next millisecond will be loaded next time the script is run
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -76,7 +88,17 @@ def ft_dk_actor_source():
         "resources": [
             {
                 "name": "actors",
-                "endpoint": "Aktør?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "Aktør",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -88,7 +110,17 @@ def ft_dk_actor_source():
             },
             {
                 "name": "actor_actor",
-                "endpoint": "AktørAktør?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "AktørAktør",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -129,13 +161,33 @@ def ft_dk_afstemning_source():
         "resources": [
             {
                 "name": "votes",
-                "endpoint": "Afstemning?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "Afstemning",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
             {
                 "name": "member_votes",
-                "endpoint": "Stemme?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "Stemme",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -179,7 +231,17 @@ def ft_dk_sag_source():
         "resources": [
             {
                 "name": "case",
-                "endpoint": "Sag?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "Sag",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -203,7 +265,17 @@ def ft_dk_sag_source():
             },
             {
                 "name": "case_step",
-                "endpoint": "Sagstrin?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "Sagstrin",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },
@@ -242,7 +314,17 @@ def ft_dk_mode_source():
         "resources": [
             {
                 "name": "meeting",
-                "endpoint": "Møde?$filter=opdateringsdato ge datetime'2020-01-01T00:00:00'",
+                "endpoint": {
+                    "path": "Møde",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
                 "write_disposition": "merge",
                 "primary_key": "id",
             },

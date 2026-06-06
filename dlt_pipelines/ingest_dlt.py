@@ -16,10 +16,14 @@ import argparse
 import os
 import sys
 import dlt
-from .sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source, ft_dk_mode_source, ft_dk_relations_source
+import logging
 
+from dlt_pipelines.sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source, ft_dk_mode_source, ft_dk_relations_source
+from dlt_pipelines.logging_config import setup_logging
 
-# Map source names to their functions
+logger = logging.getLogger("dlt_pipelines.ingest_dlt")
+
+# There are many API endpoints in oda.ft.dk. Splitting into multiple sources to keep order
 SOURCES = {
     "actors": {
         "function": ft_dk_actor_source,
@@ -54,8 +58,7 @@ def run_pipeline(source_name: str, resources: list[str] | None = None):
     """
     # Validate source exists
     if source_name not in SOURCES:
-        print(f"❌ Source '{source_name}' not found")
-        print(f"Available sources: {', '.join(SOURCES.keys())}")
+        logger.error(f"Source '{source_name}' not found. Available: {', '.join(SOURCES.keys())}")
         return None
     
     source_config = SOURCES[source_name]
@@ -71,13 +74,12 @@ def run_pipeline(source_name: str, resources: list[str] | None = None):
     # Set DuckDB database path via environment variable before creating pipeline
     os.environ['DESTINATION__DUCKDB__CREDENTIALS__DATABASE'] = db_path
     
-    # Create pipeline with unified 'raw' schema
+    # Create pipeline with unified 'raw' schema. Progress logs are output every 10 seconds through the format of the general logger.
     pipeline = dlt.pipeline(
         pipeline_name=f"ft_dk_{source_name}",
         destination="duckdb",
         dataset_name="raw",
-        pre_sql=["PRAGMA enable_wal;"],
-        progress=dlt.progress.log(10)
+        progress=dlt.progress.log(10, logger=logger)
     )
     
     # Get the source
@@ -88,11 +90,11 @@ def run_pipeline(source_name: str, resources: list[str] | None = None):
         source = source.with_resources(*resources)
     
     # Print pipeline info
-    print(f"📦 Running pipeline: {source_name}")
-    print(f"   Description: {source_config['description']}")
-    print(f"   Dataset: raw")
+    logger.info(f"📦 Running pipeline: {source_name}")
+    logger.debug(f"   Description: {source_config['description']}")
+    logger.debug(f"   Dataset: raw")
     resource_list = resources if resources else "all"
-    print(f"   Resources: {resource_list}\n")
+    logger.debug(f"   Resources: {resource_list}\n")
     
     # Run the pipeline with live progress updates
     load_info = pipeline.run(source)
@@ -111,6 +113,12 @@ Examples:
   python -m src.ingest_dlt actors --resources actors # Load only actors
   python -m src.ingest_dlt --list                    # Show available sources
         """,
+    )
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the logging level"
     )
     parser.add_argument(
         "source",
@@ -132,6 +140,7 @@ Examples:
 
 
     args = parser.parse_args()
+    setup_logging(level=args.log_level)
     
 
     # Handle --list flag
@@ -163,9 +172,9 @@ Examples:
     load_info = run_pipeline(args.source, args.resources)
     
     if load_info:
-        print(f"\n✅ Pipeline completed successfully!")
-        print(f"📊 Database: data/data.duckdb")
-        print(f"📈 Load info:\n{load_info}")
+        logger.info(f"\n✅ Pipeline completed successfully!")
+        logger.debug(f"📊 Database: data/data.duckdb")
+        logger.debug(f"📈 Load info:\n{load_info}")
     else:
         sys.exit(1)
 
