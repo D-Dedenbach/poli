@@ -18,7 +18,12 @@ import sys
 import dlt
 import logging
 
-from dlt_pipelines.sources import ft_dk_actor_source, ft_dk_afstemning_source, ft_dk_sag_source, ft_dk_mode_source, ft_dk_relations_source
+from dlt_pipelines.sources import (ft_dk_actor_source, 
+                                   ft_dk_afstemning_source, 
+                                   ft_dk_sag_source, 
+                                   ft_dk_mode_source, 
+                                   ft_dk_relations_source,
+                                   ft_dk_document_source)
 from dlt_pipelines.logging_config import setup_logging
 
 logger = logging.getLogger("dlt_pipelines.ingest_dlt")
@@ -44,6 +49,10 @@ SOURCES = {
     "relations": {
         "function": ft_dk_relations_source,
         "description": "Parliamentary periods and actor-actor roles (Periode, AktørAktørRolle)"
+    },
+    "document": {
+        "function": ft_dk_document_source,
+        "description": "Metadata on documents and how they are linked to cases and case steps"
     }
 }
 

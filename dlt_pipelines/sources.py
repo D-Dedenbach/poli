@@ -295,6 +295,8 @@ def ft_dk_sag_source():
     }
     return rest_api_source(config)
 
+
+@dlt.source
 def ft_dk_mode_source():
     """
     Source for meetings - either in plenum or in a committee
@@ -341,6 +343,132 @@ def ft_dk_mode_source():
                 "primary_key": "id",
             },
 
+        ],
+    }
+
+    return rest_api_source(config)
+
+@dlt.source
+def ft_dk_document_source():
+    """
+    Source for document metadata: document storage urls, types, links to cases and case steps, etc.
+    """
+    config = {
+        "client": {
+            "base_url": "https://oda.ft.dk/api",
+            "paginator": {
+                "type": "offset",
+                "limit": 100,
+                "limit_param": "$top",
+                "offset_param": "$skip",
+                "total_path": None, # OData APIs often don't provide total count, so we set this to None
+            },
+        },
+        "resources": [
+            {
+                "name": "document",
+                "endpoint": {
+                    "path": "Dokument",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "document_category",
+                "endpoint": "Dokumentkategori",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "document_status",
+                "endpoint": "Dokumentstatus",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "document_type",
+                "endpoint": "Dokumenttype",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "file",
+                "endpoint": {
+                    "path": "Fil",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "document_change",
+                "endpoint": {
+                    "path": "Omtryk",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_document",
+                "endpoint": {
+                    "path": "SagDokument",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_document_role",
+                "endpoint": "SagDokumentRolle",
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
+            {
+                "name": "case_step_document",
+                "endpoint": {
+                    "path": "SagstrinDokument",
+                    "params": {
+                        # Need to help dlt with the particular filter logic for the date
+                        "$filter": "opdateringsdato gt datetime'{incremental.start_value}'",
+                    },
+                    "incremental": {
+                        "cursor_path": "opdateringsdato",
+                        "initial_value": "2020-01-01T00:00:00"
+                    }
+                },
+                "write_disposition": "merge",
+                "primary_key": "id",
+            },
         ],
     }
 

@@ -1,0 +1,217 @@
+sources:
+  - name: raw
+    database: data
+    schema: raw
+    tables:
+      - name: document
+        description: Raw document data from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique document identifier
+            tests:
+              - unique
+              - not_null
+          - name: typeid
+            description: Document type identifier (foreign key to document_type.id)
+            tests:
+              - not_null
+          - name: kategoriid
+            description: Document category identifier (foreign key to document_category.id)
+            tests:
+              - not_null
+          - name: statusid
+            description: Document status identifier (foreign key to document_status.id)
+            tests:
+              - not_null
+          - name: offentlighedskode
+            description: Public access code
+          - name: titel
+            description: Document title
+          - name: dato
+            description: Document date
+            tests:
+              - not_null
+          - name: modtagelsesdato
+            description: Date document was received
+          - name: frigivelsesdato
+            description: Date document was released
+          - name: paragraf
+            description: Paragraph text
+          - name: paragrafnummer
+            description: Paragraph number
+          - name: spørgsmålsordlyd
+            description: Question wording
+          - name: spørgsmålstitel
+            description: Question title
+          - name: spørgsmålsid
+            description: Question identifier
+          - name: procedurenummer
+            description: Procedure number
+          - name: grundnotatstatus
+            description: Memo status
+          - name: dagsordenudgavenummer
+            description: Agenda edition number
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+
+      - name: document_category
+        description: Document category types from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique document category identifier
+            tests:
+              - unique
+              - not_null
+          - name: kategori
+            description: Category name (Danish)
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+
+      - name: document_status
+        description: Document status types from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique document status identifier
+            tests:
+              - unique
+              - not_null
+          - name: status
+            description: Status name (Danish)
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+
+      - name: document_type
+        description: Document type definitions from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique document type identifier
+            tests:
+              - unique
+              - not_null
+          - name: type
+            description: Document type name (Danish)
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+
+      - name: file
+        description: File attachments for documents from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique file identifier
+            tests:
+              - unique
+              - not_null
+          - name: dokumentid
+            description: Document identifier (foreign key to document.id)
+            tests:
+              - not_null
+          - name: titel
+            description: File title
+          - name: versionsdato
+            description: Version date
+            tests:
+              - not_null
+          - name: filurl
+            description: URL to the file
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+          - name: variantkode
+            description: Variant code
+          - name: format
+            description: File format
+
+      - name: document_change
+        description: Document reprints/editions (omtryk) from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique document change identifier
+            tests:
+              - unique
+              - not_null
+          - name: dokumentid
+            description: Document identifier (foreign key to document.id)
+            tests:
+              - not_null
+          - name: dato
+            description: Date of reprint
+          - name: begrundelse
+            description: Reason for reprint
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+
+      - name: case_document
+        description: Case-document relationships from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case-document relationship identifier
+            tests:
+              - unique
+              - not_null
+          - name: sagid
+            description: Case identifier (foreign key to case.id)
+            tests:
+              - not_null
+          - name: dokumentid
+            description: Document identifier (foreign key to document.id)
+            tests:
+              - not_null
+          - name: bilagsnummer
+            description: Appendix number
+          - name: frigivelsesdato
+            description: Release date
+          - name: rolleid
+            description: Role identifier (foreign key to case_document_role.id)
+            tests:
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+
+      - name: case_document_role
+        description: Case document role types from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case document role identifier
+            tests:
+              - unique
+              - not_null
+          - name: rolle
+            description: Role name (Danish)
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
+
+      - name: case_step_document
+        description: Case step-document relationships from ft.dk OData API
+        columns:
+          - name: id
+            description: Unique case step-document relationship identifier
+            tests:
+              - unique
+              - not_null
+          - name: sagstrinid
+            description: Case step identifier (foreign key to case_step.id)
+            tests:
+              - not_null
+          - name: dokumentid
+            description: Document identifier (foreign key to document.id)
+            tests:
+              - not_null
+          - name: opdateringsdato
+            description: Last update timestamp
+            tests:
+              - not_null
