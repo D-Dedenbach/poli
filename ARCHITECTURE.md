@@ -1,372 +1,131 @@
 # Danish Politician Votes — Architecture
 
+High-level architecture of the application. Per Constitution Principle V, this file is updated with every feature; feature-level (low-level) diagrams live in `specs/<feature>/plan.md`.
+
 ## Overview
 
-This project uses **dlt** (data load tool) for efficient, low-code ETL from the Danish Parliament OData API to DuckDB, with dbt for transformations.
+The application loads voting data from the Danish Parliament (Folketinget) OData API into DuckDB (ELT), transforms it with dbt, and serves it through a FastAPI backend to a Reflex web app. A PDF ingest pipeline for case documents is specified but not yet built.
 
-**Why dlt?**
-- ✅ **No boilerplate** — Single resource definition per endpoint
-- ✅ **Auto-schema inference** — Fields detected automatically from API responses
-- ✅ **Built-in pagination** — dlt handles offset/limit logic
-- ✅ **dbt integration** — Transforms data after load
-- ✅ **Simple to scale** — Add endpoints with 10 lines of code
+## High-Level Diagram
 
-## Stack
+Solid boxes exist today. Dashed boxes are planned (see `specs/001_pdf_ingest_pipeline/spec.md`) or not yet working (see [Known Gaps](#known-gaps)).
 
-- **dlt** — ETL orchestration (replaces Pydantic + ORM boilerplate)
-- **DuckDB** — Embedded OLAP database (perfect for dbt)
-- **dbt** — SQL transformations on raw data
+```mermaid
+flowchart TD
+    ODA["'Folketinget OData API<br/>oda.ft.dk/api'"]
+    PDF["'PDF documents<br/>(file URLs from raw.file)'"]
 
-## Project Structure
+    subgraph ingest["Ingestion (Python)"]
+        DLT["'dlt_pipelines/<br/>ingest_dlt.py + sources.py'"]
+        EXTRACT["'document_extraction/<br/>PDF download + parse markitdown'"]
+    end
 
-```
-danish-politician-votes/
-├── sources.py           # dlt resource definitions
-├── ingest_dlt.py        # dlt pipeline runner
-├── dbt_project/         # (future) dbt transformations
-├── db/config.py         # Minimal config
-└── pyproject.toml
-```
+    subgraph db["DuckDB: data/data.duckdb"]
+        RAW[("'raw schema<br/>31 tables, as loaded by dlt'")]
+        DEV[("'dev schema dbt views<br/>stg_ -> int_ -> app_'")]
+        SEED[("'dev_raw.party_display<br/>dbt seed'")]
+        PDFTXT[("'extracted PDF text<br/>planned'")]
+    end
 
-## Quick Start
+    DBT["'dbt/<br/>staging -> intermediary -> app'"]
+    CLS["'transform_scripts/classifier.py<br/>zero-shot case categorization'"]
+    API["'backend/run_api.py<br/>FastAPI read-only'"]
+    WEB["'webapp/<br/>Reflex'"]
 
-### 1. Install dependencies
-```bash
-uv pip install dlt[duckdb] dbt-duckdb
-```
+    ODA --> DLT --> RAW
+    RAW --> DBT --> DEV
+    SEED --> DBT
+    DEV --> API --> WEB
+    DEV --> CLS
+    CLS -.->|"'writes categories table not created by dbt'"| DEV
+    PDF -.-> EXTRACT -.-> PDFTXT
+    RAW -.->|"'file URLs'"| EXTRACT
+    PDFTXT -.-> DBT
 
-### 2. Fetch all data
-```bash
-python ingest_dlt.py
-```
-
-Or fetch specific endpoints:
-```bash
-python ingest_dlt.py --resources actors actor_types
-```
-
-This will:
-- Create `ft_dk_pipeline.duckdb`
-- Automatically infer schema from OData responses
-- Create `raw` dataset with tables: `actors`, `actor_types`, `actor_actor`, `actor_actor_roles`
-
-### 3. Query the data
-```python
-import duckdb
-
-conn = duckdb.connect("ft_dk_pipeline.duckdb")
-result = conn.execute("SELECT COUNT(*) FROM raw.actors").fetchall()
-print(f"Total actors: {result[0][0]}")
+    style EXTRACT stroke-dasharray: 5 5
+    style PDFTXT stroke-dasharray: 5 5
+    style PDF stroke-dasharray: 5 5
+    style CLS stroke-dasharray: 5 5
 ```
 
-## Data Flow
+## Components
 
-```
-OData API
-   ↓
-sources.py (dlt resources)
-   ↓
-ingest_dlt.py (dlt pipeline)
-   ↓
-DuckDB (ft_dk_pipeline.duckdb)
-   ↓
-dbt (future: transformations)
-   ↓
-Analytics / API
-```
+| Component | Path | Responsibility |
+|-----------|------|----------------|
+| dlt sources | `dlt_pipelines/sources.py` | One `rest_api_source` per OData entity group: `actors`, `votes`, `cases`, `meeting`, `relations`, `document`. |
+| Pipeline runner | `dlt_pipelines/ingest_dlt.py` | CLI that runs a source (or `all`) into `data/data.duckdb`, schema `raw`. One dlt pipeline per source (`ft_dk_<source>`). |
+| dbt project | `dbt/` | All transformations. Layers: `staging` (`stg_`, light casting and renaming), `intermediary` (`int_`, joins and logic), `app` (`app_`, models consumed by the API). Seed: `party_display.csv`. |
+| API | `backend/run_api.py` | FastAPI app with a read-only DuckDB connection. Endpoints: `GET /polls/latest` (paginated), `GET /votes/{actor_id}`. |
+| Web app | `webapp/` | Reflex app. Fetches polls from the API and renders poll cards with donut charts. Party colors are defined in `webapp/states/poll_outcome_state.py`. |
+| Classifier | `transform_scripts/classifier.py` | Zero-shot classification (Hugging Face `transformers`) of cases into the categories in `backend/configs/categories.yml`. |
+| PDF extraction | `document_extraction/` | Work in progress: rate-limited download (5 req/s) and markitdown parsing. Methods are stubs. |
+| DB helper | `utils/db_connection.py` | Thread-safe singleton DuckDB connection used by PDF extraction. |
+| Exploration | `exploration/` | Notebooks. Not part of the application. |
 
-## How dlt Simplifies Things
+## Data Flow and Layers
 
-**Before (old approach):**
-- Pydantic model for validation
-- ORM model for persistence  
-- Conversion function
-- Manual schema creation
-- ~100 lines of code per endpoint
+1. **Load (raw)** — dlt loads OData entities into the `raw` schema, one table per resource (e.g. `raw.actors`, `raw.case`, `raw.file`). Large entities load incrementally on `opdateringsdato` (initial value 2020-01-01) with `merge` and primary key `id`. Small lookup tables (types, statuses) are merged on every run. Raw tables are never modified after loading (Principle III). dlt also creates `raw_staging` for its own load staging; do not read from it.
+2. **Transform (dbt)** — dbt reads `raw` sources and builds views in the `dev` schema: `stg_*` → `int_*` → `app_*`.
+3. **Serve** — the API reads `dev.app_*` views read-only. The web app calls the API only; it never touches the database.
 
-**After (dlt approach):**
-```python
-@dlt.resource(name="actors")
-def get_actors():
-    skip = 0
-    while True:
-        response = requests.get("...", params={...})
-        items = response.json().get("value", [])
-        if not items:
-            break
-        for item in items:
-            yield item  # dlt infers schema from this
-        skip += ...
-```
+## Architecture Decisions
 
-That's it! dlt:
-- Infers `actors` table schema from yielded dicts
-- Handles pagination
-- Detects data types
-- Evolves schema if API changes
-- Creates indexes
-- Handles updates/deletes
+| Decision | Why | Upside | Downside |
+|----------|-----|--------|----------|
+| dlt for OData ingestion | Declarative config replaces custom pagination, schema, and state handling. | Little code per endpoint; built-in incremental loading and schema evolution. | Less control over request details; the OData date filter syntax has to be spelled out per resource. |
+| DuckDB single file (`data/data.duckdb`) | Embedded OLAP, works with dlt and dbt, no server to run. | Simple setup, fast analytics. | One writer at a time: the API holds the file open read-only, so dlt/dbt runs and the API can conflict. Not suited to hosting multiple writers. |
+| ELT with dbt, raw immutable | Keeps data auditable and allows reprocessing when logic changes. | Logic changes need no re-download. | Storage duplication across layers. |
+| dbt models as views | Data volume is small and views are always current. | No refresh step. | Query cost grows with model depth; revisit if API latency becomes a problem. |
+| API separate from web app | The frontend stays independent of storage. | The DB can change without touching the UI. | Two processes to run locally. |
+| Custom Python for PDFs (not dlt) | PDFs need download, rate limiting, and parsing that dlt does not cover. | Full control over retry and skip logic. | Must implement idempotency and traceability (PDF file and page) ourselves. |
 
-## Environment Variables
+## Running
+
+All commands use `uv`. Run dbt from `dbt/`.
 
 ```bash
-# dlt will create this database (defaults to project root)
-DLT_DATA_PATH="./"
+uv sync
+
+# Ingest
+uv run python -m dlt_pipelines.ingest_dlt --list
+uv run python -m dlt_pipelines.ingest_dlt all
+uv run python -m dlt_pipelines.ingest_dlt actors --resources actors actor_types
+
+# Transform
+cd dbt && uv run dbt build
+
+# Serve (two processes)
+uv run uvicorn backend.run_api:app --port 5000 --reload
+uv run reflex run
 ```
 
-## Next: Add dbt Transformations
+See `README.md` for the CLI arguments and the full list of sources and resources.
 
-When ready:
+## Testing
 
-```bash
-mkdir dbt_project
-cd dbt_project
-dbt init --adapter duckdb
-```
+Per Constitution Principle IV, every task lists its tests and all must pass before it is done.
 
-Create `dbt_project/models/staging/stg_actors.sql`:
+| Layer | Command | Status |
+|-------|---------|--------|
+| Plain Python | `uv run pytest tests/document_extraction_tests` | Exists (`DBConnection`). |
+| Ingestion | `uv run pytest tests/pipeline` | Directory does not exist yet. |
+| API | `uv run pytest tests/api` | Directory does not exist yet. |
+| dbt | `cd dbt && uv run dbt test` | Only source tests in `_*__sources.yml` and `app_votes.yml`. |
 
-```sql
-{{ config(materialized='view') }}
+## Known Gaps
 
-SELECT 
-    id,
-    navn,
-    typeid,
-    startdato,
-    slutdato,
-    _dlt_load_id,
-    _dlt_id
-FROM {{ source('raw', 'actors') }}
-WHERE navn IS NOT NULL
-```
+Differences between the code and the constitution or between components. They need a feature (spec → plan → tasks) to fix.
 
-Run:
-
-```bash
-dbt run
-dbt test
-dbt docs gen
-```
-
-## Future: Add API Layer
-
-When ready to expose data:
-
-```python
-from fastapi import FastAPI
-import duckdb
-
-app = FastAPI()
-
-@app.get("/actors/{id}")
-async def get_actor(id: int):
-    conn = duckdb.connect("ft_dk_pipeline.duckdb")
-    result = conn.execute(
-        "SELECT * FROM raw.actors WHERE id = ?",
-        [id]
-    ).fetchall()
-    ...
-```
-
-## Key Principles
-
-✅ **Minimal boilerplate** — dlt handles schema, validation, pagination  
-✅ **Type inference** — No need to define every field upfront  
-✅ **Incremental loading** — dlt tracks state automatically  
-✅ **dbt-ready** — Raw tables feed directly into dbt workflows  
-✅ **Scalable** — Add endpoints in minutes, not hours  
-
-## Troubleshooting
-
-**Database file location:**
-```
-ft_dk_pipeline.duckdb  # Created in project root
-```
-
-**View dlt metadata:**
-```bash
-ls -la .dlt/pipelines/ft_dk_pipeline/  # Pipeline state
-```
-
-**Clear and reload:**
-```bash
-rm -rf ft_dk_pipeline.duckdb .dlt/
-python ingest_dlt.py
-```
+- **No ingestion or API tests.** `tests/pipeline` and `tests/api` do not exist (Principle IV).
+- **`GET /votes/{actor_id}` is broken.** It queries `raw_app.app_votes`, which does not exist; `dbt/models/app/app_votes.yml` has no matching SQL model. It also builds SQL with an f-string; use query parameters.
+- **Classifier output table is missing.** `classifier.py` reads `dev.stg_case` and writes `dev.stg_case_cat_zeroshot` and `dev.stg_case_scores_raw`. No dbt model or dlt resource creates them, and writing into the dbt schema blurs the raw/transform boundary (Principle III).
+- **Hardcoded paths.** `dbt/profiles.yml` uses an absolute path to `data/data.duckdb`. `backend/configs/database.py` defines `DB_PATH`, which `run_api.py` does not use.
+- **PDF extraction is incomplete.** `document_extraction/` has stubs only and no idempotency or traceability yet.
+- **Single-file lock.** The API opens the database read-only for the whole process lifetime, which can block `dbt`/`dlt` writes.
 
 ## References
 
-- [dlt Docs](https://dlthub.com/docs)
-- [dlt + dbt Integration](https://dlthub.com/docs/general-usage/resource#dbt-workflow)
-- [DuckDB Python](https://duckdb.org/docs/api/python/overview)
-
----
-
-## Quick Start
-
-### 1. Install dependencies
-```bash
-uv pip install duckdb dbt-duckdb sqlalchemy duckdb-engine alembic
-```
-
-### 2. Run ingest to fetch and save actors
-```bash
-python ingest.py
-```
-
-For testing (limit to 100 actors):
-```bash
-python ingest.py --limit 100
-```
-
-This will:
-- Create `actors.duckdb` if it doesn't exist
-- Fetch all actors from OData API
-- Validate with Pydantic
-- Convert to ORM models
-- Save to DuckDB database
-
-### 3. (Optional) Query the database
-```python
-from db.config import SessionLocal
-from db.orm_models import ActorORM
-
-session = SessionLocal()
-actors = session.query(ActorORM).limit(5).all()
-for actor in actors:
-    print(actor.navn, actor.typeid)
-```
-
----
-
-## File Structure
-
-```
-danish-politician-votes/
-├── client.py              # OData API client (fetch)
-├── models.py              # Pydantic models (validation)
-├── ingest.py              # ETL script (fetch → DB)
-├── db/
-│   ├── __init__.py
-│   ├── config.py          # DB engine, DDL initialization
-│   ├── orm_models.py      # SQLAlchemy ORM models
-│   └── repository.py      # Abstract repository + SQLAlchemy impl
-├── pyproject.toml
-└── README.md (this file)
-```
-
----
-
-## Environment Variables
-
-Control database backend with `DATABASE_URL`:
-
-```bash
-# DuckDB (default)
-DATABASE_URL="duckdb:///./actors.duckdb"
-
-# PostgreSQL (for hosting)
-DATABASE_URL="postgresql://user:pass@localhost/actors_db"
-
-# Enable SQL logging
-SQL_ECHO="true"
-```
-
----
-
-## Future: Set Up dbt for Transformations
-
-When ready to add data transformations:
-
-```bash
-# Initialize dbt project
-dbt init dbt_project
-cd dbt_project
-
-# Configure DuckDB adapter in profiles.yml
-# Then run:
-dbt run        # Execute transformations
-dbt test       # Run data quality tests
-dbt docs gen   # Generate documentation
-```
-
-Your dbt models will sit atop your raw data (actors table) and create `processed` tables:
-```sql
--- models/staging/stg_actors.sql
-SELECT 
-    id,
-    navn,
-    typeid,
-    startdato,
-    slutdato
-FROM {{ source('raw', 'actors') }}
-WHERE navn IS NOT NULL
-```
-
----
-
-## Future: Add API Layer (FastAPI)
-
-When you're ready to expose data to clients:
-
-```python
-# api.py (new)
-from fastapi import FastAPI, Depends
-from db.config import get_db
-from db.orm_models import ActorORM
-
-app = FastAPI()
-
-@app.get("/actors/{id}")
-def get_actor(id: int, db = Depends(get_db)):
-    actor = db.query(ActorORM).filter(ActorORM.id == id).first()
-    if not actor:
-        raise HTTPException(status_code=404)
-    return actor
-```
-
-Then `uvicorn api:app --reload` and deploy!
-
----
-
-## Future: Database Migrations (Alembic)
-
-To evolve schema over time without losing data:
-
-```bash
-# Initialize (one-time)
-alembic init alembic
-
-# Create a migration
-alembic revision --autogenerate -m "Add vote_history table"
-
-# Apply migrations
-alembic upgrade head
-```
-
-Note: For DuckDB, you may prefer to manage schema in dbt instead.
-
----
-
-## Next Steps
-
-1. **Run ingest.py** to populate your DuckDB with raw data
-2. **Set up dbt** for data transformations when ready
-3. **Add more OData endpoints** (ActorType, ActorActor, votes, etc.)
-4. **Implement FastAPI endpoints** when ready for client access
-5. **Migrate to PostgreSQL** when deploying: just change `DATABASE_URL`
-
----
-
-## Key Design Principles
-
-✅ **Repository Pattern** → Swap DB backends without changing code  
-✅ **Separate Pydantic/ORM models** → API validation ≠ persistence  
-✅ **Environment-based config** → Dev/staging/prod with one code base  
-✅ **dbt-ready** → Transformations layer built in from the start  
-✅ **Type hints everywhere** → IDE autocomplete, mypy validation  
-
----
-
-Questions? Check `db/repository.py` for the abstract interface and `ingest.py` for an example ingest workflow.
+- [dlt docs](https://dlthub.com/docs)
+- [dbt-duckdb](https://github.com/duckdb/dbt-duckdb)
+- [Folketinget OData API](https://oda.ft.dk/api)
+- [Reflex docs](https://reflex.dev/docs)
